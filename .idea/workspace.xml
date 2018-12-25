@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="66a2d5d5-b955-4176-bbf0-dd01b3a04845" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/blogger.py" beforeDir="false" afterPath="$PROJECT_DIR$/blogger.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -51,30 +52,36 @@
         </counts>
       </usages-collector>
     </session>
+    <session id="533762241">
+      <usages-collector id="statistics.lifecycle.project">
+        <counts>
+          <entry key="project.open.time.2" value="1" />
+          <entry key="project.opened" value="1" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.edit">
+        <counts>
+          <entry key="py" value="1533" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.edit">
+        <counts>
+          <entry key="Python" value="1533" />
+        </counts>
+      </usages-collector>
+    </session>
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/blogger.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="315">
-              <caret line="158" column="33" lean-forward="true" selection-start-line="158" selection-start-column="33" selection-end-line="158" selection-end-column="33" />
+            <state relative-caret-position="574">
+              <caret line="49" column="67" lean-forward="true" selection-start-line="49" selection-start-column="67" selection-end-line="49" selection-end-column="67" />
               <folding>
                 <element signature="e#0#16#0" expanded="true" />
-                <marker date="1545575185362" expanded="true" signature="224:233" ph="..." />
-                <marker date="1545575185362" expanded="true" signature="355:360" ph="..." />
-                <marker date="1545575185362" expanded="true" signature="428:431" ph="..." />
-                <marker date="1545575185362" expanded="true" signature="1591:1596" ph="..." />
-                <marker date="1545575185362" expanded="true" signature="1718:1719" ph="..." />
-                <marker date="1545575185362" expanded="true" signature="1718:1723" ph="..." />
-                <marker date="1545575185362" expanded="true" signature="2563:2682" ph="..." />
-                <marker date="1545575185362" expanded="true" signature="3147:3181" ph="..." />
-                <marker date="1545575185362" expanded="true" signature="3277:3282" ph="..." />
-                <marker date="1545575185362" expanded="true" signature="3277:3449" ph="..." />
-                <marker date="1545575185362" expanded="true" signature="3444:3449" ph="..." />
-                <marker date="1545575185362" expanded="true" signature="3495:3514" ph="..." />
-                <marker date="1545575185362" expanded="true" signature="3547:3566" ph="..." />
-                <marker date="1545575185362" expanded="true" signature="3601:3620" ph="..." />
+                <marker date="1545761631954" expanded="true" signature="864:883" ph="..." />
+                <marker date="1545761631954" expanded="true" signature="910:1578" ph="..." />
               </folding>
             </state>
           </provider>
@@ -88,6 +95,12 @@
         <option value="Python Script" />
       </list>
     </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>type</find>
+      <find>Client</find>
+    </findStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -114,6 +127,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Course" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -125,7 +139,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Course" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -249,9 +262,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/id_rsa">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
+    <entry file="file://$PROJECT_DIR$/id_rsa" />
     <entry file="file://$PROJECT_DIR$/negotiator.py">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
@@ -270,24 +281,12 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/blogger.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="315">
-          <caret line="158" column="33" lean-forward="true" selection-start-line="158" selection-start-column="33" selection-end-line="158" selection-end-column="33" />
+        <state relative-caret-position="574">
+          <caret line="49" column="67" lean-forward="true" selection-start-line="49" selection-start-column="67" selection-end-line="49" selection-end-column="67" />
           <folding>
             <element signature="e#0#16#0" expanded="true" />
-            <marker date="1545575185362" expanded="true" signature="224:233" ph="..." />
-            <marker date="1545575185362" expanded="true" signature="355:360" ph="..." />
-            <marker date="1545575185362" expanded="true" signature="428:431" ph="..." />
-            <marker date="1545575185362" expanded="true" signature="1591:1596" ph="..." />
-            <marker date="1545575185362" expanded="true" signature="1718:1719" ph="..." />
-            <marker date="1545575185362" expanded="true" signature="1718:1723" ph="..." />
-            <marker date="1545575185362" expanded="true" signature="2563:2682" ph="..." />
-            <marker date="1545575185362" expanded="true" signature="3147:3181" ph="..." />
-            <marker date="1545575185362" expanded="true" signature="3277:3282" ph="..." />
-            <marker date="1545575185362" expanded="true" signature="3277:3449" ph="..." />
-            <marker date="1545575185362" expanded="true" signature="3444:3449" ph="..." />
-            <marker date="1545575185362" expanded="true" signature="3495:3514" ph="..." />
-            <marker date="1545575185362" expanded="true" signature="3547:3566" ph="..." />
-            <marker date="1545575185362" expanded="true" signature="3601:3620" ph="..." />
+            <marker date="1545761631954" expanded="true" signature="864:883" ph="..." />
+            <marker date="1545761631954" expanded="true" signature="910:1578" ph="..." />
           </folding>
         </state>
       </provider>
