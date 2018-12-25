@@ -1,0 +1,4 @@
+UDID,IP,Port,Type,Nickname,Timestamp,Status
+Sadsad,3.454.53,345,Y,Egemen,00:00,Alive
+Sadas,3.4545.3,345,Y,Timoti,00:01,Alive
+Sads,345.4.5.3,345,A,Enes,00:01,NotConnected
