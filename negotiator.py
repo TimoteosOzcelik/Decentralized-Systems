@@ -8,6 +8,8 @@ from Crypto import Random
 import queue
 import logging
 
+#Dictionary to store every information
+# TODO - a public key column can be added
 index_dict={}
 
 
@@ -20,11 +22,13 @@ class Connection(threading.Thread):
 
 
 class Server(threading.Thread):
+#Add or Del functions?
     def __init__(self):
         threading.Thread.__init__(self)
 
     def run(self):
         pass
+
 
 
 class Client(threading.Thread):
@@ -70,6 +74,7 @@ class Client(threading.Thread):
         sys.exit()
 
     # Request
+    # TODO - Login Unparsed
     def login(self):
         req = 'INF'
         self.sock.send(
@@ -98,6 +103,7 @@ class Client(threading.Thread):
         self.parser(req, resp)
 
     # Request & Response
+    # Send signed hash?
     def demand_signed_hash(self, public_key):
         req = 'SMS'
         self.sock.send(req.encode())
@@ -119,12 +125,20 @@ class Client(threading.Thread):
         self.parser(req, resp)
 
     # Request
-    def demand_microblog(self):
-        pass
+    def demand_microblog(self, microblog_quantity):
+        # TODO Microblog integer or string??
+        req = 'DMB'+" "+microblog_quantity
+        self.sock.send(self.public_key.encrypt(req.encode(), 32).encode())
+        resp = self.sock.recv(1024).decode()
+        self.parser(req, resp)
 
     # Response
     def check_identity(self):
-        pass
+        req = 'WHO'
+        self.sock.send(req.encode())
+        resp = self.sock.recv(1024).decode()
+        self.parser(req, resp)
+        
 
     # Request & Response
     def check_connection(self):
@@ -133,30 +147,108 @@ class Client(threading.Thread):
         resp = self.sock.recv(1024).decode()
         self.parser(req, resp)
         # TODO: Update timestamp
+        # TODO Maybe Add Timeout for no response
+        # If no response may break entire communication?
 
     # Request
     def send_message(self, message):
-        pass
+        req = 'MSG'+" "+message
+        self.sock.send(self.public_key.encrypt(req.encode(), 32).encode())
+        resp = self.sock.recv(1024).decode()
+        self.parser(req, resp)
 
     # Response
     def blocked(self):
-        pass
+        req = 'SBM'
+        self.sock.send(req.encode())
+        resp = self.sock.recv(1024).decode()
+        self.parser(req, resp)
+        # TODO block from list
 
     # Response
     def unblocked(self):
-        pass
+        req = 'SUM'
+        self.sock.send(req.encode())
+        resp = self.sock.recv(1024).decode()
+        self.parser(req, resp)
+        # TODO unblock from list
 
+    # Prints can be deleted
     # Request & Response
     def parser(self, request, received):
-        pass
+        req=self.request
+        resp=self.received
+        if(req=="LSQ"):
+            if(rep[0:3]=="LSA"):
+                s=rep[5:]
+                print (s)
+            else:
+                s=rep["Not logged in"]
+                print (s)
+        if(req=="PUB"):
+            if(rep[0:3]=="MPK"):
+                # TODO Add Host Public Key To Dictionary
+                print ("Key got.")
+            else:
+                print ("Problem Acquiring Key")
+        if(req=="SMS"):
+            if(rep[0:3]=="SYS"):
+                # TODO Check Hash
+                print ("Sign Checked.")
+            else:
+                print ("Problem with signed Key")
+        if(req=="SUB"):
+            if(rep=="SOK"):
+                print ("Subscribed")
+            else:
+                print ("Could not subscribe.")
+        if(req=="USB"):
+            if(rep[3]=="SOK"):
+                print ("Unsubscribed")
+            else:
+                print ("Could not unsubscribe.")
+        if(req[0:3]=="DMB"):
+            if(rep[0:3]=="MBM"):
+                s=rep[5:]
+                print (s)
+            else:
+                print ("Could not show microblogs.")
+        if(req=="SBM"):
+            if(rep[0:3]=="BOK"):
+                print ("Succesfully blocked")
+            else:
+                print ("Could not tell blocked.")
+        if(req=="SUM"):
+            if(rep=="UOK"):
+                print ("Succesfully unblocked")
+            else:
+                print ("Could not tell unblocked.")    
+        if(req=="TIC"):
+            if(rep=="TOC"):
+                print ("Still Connected")
+            else:
+                print ("Not Connected") 
+        if(req=="WHO"):
+            if(rep[0:3]=="MID"):
+                print (s)
+                # TODO if s in index_dict:
+                #       print ("Verified Connection")
+            else:
+                print ("Could not verify connection") 
+        if(req=="MSG"):
+            if(rep=="MOK"):
+                print ("Message Sent")
+            else:
+                print ("Message did not reach to its destination")
+
 
 
 def main():
 
-    #Reads any existing information of network from file
-    
+    #Reads any existing information of network from file 
     if(os.path.isfile('index_file.txt')):
         index_file = open('index_file.txt', 'r')
+        file_header=index_file.readline()
         data = index_file.readlines()
 
     #Copies available information to a dcitionary
@@ -196,19 +288,20 @@ def main():
 
     #(Over)Writes the information on dictionary to a file just before closing
     index_file = open('index_file.txt', 'w')
+    index_file.write(file_header)
     for value in index_dict.values():
         i=0
         for word in value:
             index_file.write(word)
 
             #No commas if last column
-            if(i!=4):
+            if(i!=6):
                 index_file.write(",")
             i=i+1
         index_file.write("\n")
     index_file.close()
 
-    print(index_dict.values())
+    print(file_header)
 
 if __name__ == "__main__":
     main()
