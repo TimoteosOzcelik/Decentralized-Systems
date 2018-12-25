@@ -12,19 +12,30 @@ import logging
 # TODO - a public key column can be added
 index_dict={}
 
+
 class Connection(threading.Thread):
-    def __init__(self, host, port):
+    def __init__(self, server_host, server_port, server_public, server_private):
         threading.Thread.__init__(self)
+        self.server_socket = socket.socket()
+        self.server_host = server_host
+        self.server_port = server_port
+        self.server_public = server_public
+        self.server_private = server_private
 
     def run(self):
-        pass
+        self.server_socket.bind((self.server_host, self.server_port))
+        self.server_socket.listen(5)
+        while True:
+            rw_socket, addr = self.server_socket.accept()
+            server = Server(rw_socket=rw_socket, server_public=self.server_public, server_private=self.server_private)
+            server.start()
 
 
 class Server(threading.Thread):
     def __init__(self, rw_socket, server_public, server_private):
         threading.Thread.__init__(self)
         self.rw_socket = rw_socket
-        self.server_public_key = server_public
+        self.server_public = server_public
         self.server_private = server_private
 
         self.is_login = False
@@ -32,6 +43,7 @@ class Server(threading.Thread):
         self.is_block = False
 
     def run(self):
+        self.check_in_list()
         while True:
             msg = self.rw_socket.recv(1024).decode()
             ret = self.parser(msg)
@@ -52,12 +64,23 @@ class Server(threading.Thread):
                 nick = spl[4]
                 client = Client(client_host=ctrl_host, client_port=ctrl_port, client_uuid=ctrl_uuid, server_private=self.server_private)
                 check = client.check_identity()
-                # TODO: IF check is OK add to table or do nothing
-                return check
-
+                if check is not 'ERR' and str(check) == str(ctrl_uuid):
+                    # TODO: IF check is OK add to table or do nothing
+                    return 'HEL'
+                elif self.is_block:
+                    return 'BLK'
+                else:
+                    return 'REJ'
             else:
                 return 'REJ'
-
+        elif received == 'LSQ':
+            if not self.is_login:
+                return 'ERL'
+            elif self.is_block:
+                return 'BLK'
+            else:
+                # TODO: Return the list
+                pass
 
     def response(self):
         pass
@@ -164,7 +187,7 @@ class Client(threading.Thread):
         req = 'WHO'
         self.sock.send(req.encode())
         resp = self.sock.recv(1024).decode()
-        self.parser(req, resp)
+        return self.parser(req, resp)
 
     # Request & Response
     def check_connection(self):
@@ -199,12 +222,43 @@ class Client(threading.Thread):
         self.parser(req, resp)
         # TODO unblock from list
 
-# Prints can be deleted
     # Request & Response
     def parser(self, request, received):
-        req=self.request
-        resp=self.received
-        if(req=="LSQ"):
+        if request == "WHO":
+            if received[0:3] == "MID":
+                rest = received[3:].strip()
+                if not rest:
+                    return rest
+                else:
+                    return 'ERR'
+            else:
+                return 'ERR'
+        elif request == 'PUB':
+            if received[0:3]=="MPK":
+                rest = received[3:].strip()
+                if not rest:
+                    self.public_key = rest
+                else:
+                    return 'ERK'
+            else:
+                return 'ERR'
+        elif request == 'SMS':
+            if received[0:3]=="SYS":
+                rest = received[3:].strip()
+                spl = rest.split(';')
+                if spl.__len__() == 2:
+                    signature = spl[0]
+                    hash = spl[1]
+                    self.public_key.verify(hash, signature)
+                    # TODO: Add to dictionary & Update TYPE
+                else:
+                    return 'ERK'
+        '''
+        if(req=="SUB"):
+        else:
+            return 'ERR'
+
+        if(request=="LSQ"):
             if(rep[0:3]=="LSA"):
                 s=rep[5:]
                 print (s)
@@ -253,37 +307,16 @@ class Client(threading.Thread):
             if(rep=="TOC"):
                 print ("Still Connected")
             else:
-                print ("Not Connected") 
-        if(req=="WHO"):
-            if(rep[0:3]=="MID"):
-                print (s)
-                # TODO if s in index_dict:
-                #       print ("Verified Connection")
-            else:
-                print ("Could not verify connection") 
+                print ("Not Connected")
         if(req=="MSG"):
             if(rep=="MOK"):
                 print ("Message Sent")
             else:
                 print ("Message did not reach to its destination")
+        '''
+
 
 def main():
-
-    #Reads any existing information of network from file 
-    if(os.path.isfile('index_file.txt')):
-        index_file = open('index_file.txt', 'r')
-        file_header=index_file.readline()
-        data = index_file.readlines()
-
-    #Copies available information to a dcitionary
-        for line in data:
-            words = line.rstrip("\n").split(",")
-            index_dict[words[0]]=words
-        index_file.close()
-
-    else:
-        print("No existing index file found")
-
     exists_pem = os.path.isfile('id_rsa.pem')
     exists_pub = os.path.isfile('id_rsa.pub')
     exists_uuid = os.path.isfile('uuid.pem')
@@ -310,23 +343,39 @@ def main():
         f.write(blogger_uuid.__str__())
         f.close()
 
-    #(Over)Writes the information on dictionary to a file just before closing
+    # Reads any existing information of network from file
+    if os.path.isfile('index_file.txt'):
+        index_file = open('index_file.txt', 'r')
+        file_header=index_file.readline()
+        data = index_file.readlines()
+
+    # Copies available information to a dcitionary
+        for line in data:
+            words = line.rstrip("\n").split(",")
+            index_dict[words[0]] = words
+        index_file.close()
+
+    # TODO: Interface & Connection Start
+
+    # (Over)Writes the information on dictionary to a file just before closing
+    '''
     index_file = open('index_file.txt', 'w')
     index_file.write(file_header)
+    
     for value in index_dict.values():
         i=0
         for word in value:
             index_file.write(word)
 
-            #No commas if last column
+            # No commas if last column
             if(i!=6):
                 index_file.write(",")
             i=i+1
         index_file.write("\n")
     index_file.close()
-
+    
     print(file_header)
-
+    '''
 
 if __name__ == "__main__":
     main()
