@@ -12,6 +12,8 @@ import logging
 class Connection(threading.Thread):
     def __init__(self, host, port):
         threading.Thread.__init__(self)
+        self.host = host
+        self.port = port
 
     def run(self):
         pass
@@ -37,6 +39,9 @@ class Server(threading.Thread):
     def check_in_list(self):
         pass
 
+    def response(self):
+        pass
+
     def parser(self, received):
         if received[0:3] == 'INF':
             rest = received[3:].strip()
@@ -54,10 +59,6 @@ class Server(threading.Thread):
 
             else:
                 return 'REJ'
-
-
-    def response(self):
-        pass
 
 
 class Client(threading.Thread):
