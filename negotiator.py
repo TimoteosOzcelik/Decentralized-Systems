@@ -66,9 +66,9 @@ class IlgiliKisi(threading.Thread):
                             gelen=s_yeni.recv(1024).decode() #Kullanicidan uuid bekliyoruz
                             if gelen == str(liste[0]): #server tarafından gelen ile daha önce gelen uuid eşitse
                                 self.soket.send('HEL\n').encode() #Merhaba
-                                return "HEL"
                                 fihrist[str(liste[0])]=[str(liste[1]),str(liste[2]),liste[3],str(liste[4])]#fihriste ekleme
                                 #kayit.write() #dosyaya ekleme
+                                return "HEL"
                             else:    #değilse
                                 self.soket.send('REJ\n').encode() #reddiyoruz
                                 return "REJ"
