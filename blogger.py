@@ -361,10 +361,10 @@ def main():
         file_header = index_file.readline()
         data = index_file.readlines()
 
-    # Copies available information to a dcitionary
+    # Copies available information to a dictionary
         for line in data:
             words = line.rstrip().split(",")
-            index_dict[words[0]] = words
+            index_dict[words[0]] = words[1:]
         index_file.close()
     else:
         file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,PUBLIC_KEY,TYPE,TIMESTAMP,IS_ACTIVE'
