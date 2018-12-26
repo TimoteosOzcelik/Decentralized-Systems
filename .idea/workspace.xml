@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="66a2d5d5-b955-4176-bbf0-dd01b3a04845" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/T_Mac.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/T_Mac.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/blogger.py" beforeDir="false" afterPath="$PROJECT_DIR$/blogger.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/blogger_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/blogger_server.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -63,13 +65,13 @@
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="dummy" value="2" />
-          <entry key="py" value="4057" />
+          <entry key="py" value="6332" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="PLAIN_TEXT" value="2" />
-          <entry key="Python" value="4057" />
+          <entry key="Python" value="6332" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
@@ -91,21 +93,12 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/blogger.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="275">
-              <caret line="367" column="26" lean-forward="true" selection-start-line="367" selection-start-column="26" selection-end-line="367" selection-end-column="26" />
+            <state relative-caret-position="-2965">
+              <caret line="95" lean-forward="true" selection-start-line="95" selection-end-line="95" />
               <folding>
                 <element signature="e#0#16#0" expanded="true" />
-                <marker date="1545822293731" expanded="true" signature="1645:1651" ph="..." />
+                <marker date="1545827669728" expanded="true" signature="2017:2023" ph="..." />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/blogger_server.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="15">
-              <caret line="1" column="26" selection-start-line="1" selection-start-column="26" selection-end-line="1" selection-end-column="26" />
             </state>
           </provider>
         </entry>
@@ -332,18 +325,21 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/blogger_server.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="15">
-          <caret line="1" column="26" selection-start-line="1" selection-start-column="26" selection-end-line="1" selection-end-column="26" />
+        <state relative-caret-position="1620">
+          <caret line="108" column="23" lean-forward="true" selection-start-line="108" selection-start-column="23" selection-end-line="108" selection-end-column="23" />
+          <folding>
+            <element signature="e#0#16#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/blogger.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="275">
-          <caret line="367" column="26" lean-forward="true" selection-start-line="367" selection-start-column="26" selection-end-line="367" selection-end-column="26" />
+        <state relative-caret-position="-2965">
+          <caret line="95" lean-forward="true" selection-start-line="95" selection-end-line="95" />
           <folding>
             <element signature="e#0#16#0" expanded="true" />
-            <marker date="1545822293731" expanded="true" signature="1645:1651" ph="..." />
+            <marker date="1545827669728" expanded="true" signature="2017:2023" ph="..." />
           </folding>
         </state>
       </provider>

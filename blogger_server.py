@@ -63,3 +63,61 @@ class Server(threading.Thread):
 
     def response(self):
         pass
+
+    '''
+    if(request=="LSQ"):
+        if(rep[0:3]=="LSA"):
+            s=rep[5:]
+            print (s)
+        else:
+            s=rep["Not logged in"]
+            print (s)
+    if(req=="PUB"):
+        if(rep[0:3]=="MPK"):
+            # TODO Add Host Public Key To Dictionary
+            print ("Key got.")
+        else:
+            print ("Problem Acquiring Key")
+    if(req=="SMS"):
+        if(rep[0:3]=="SYS"):
+            # TODO Check Hash
+            print ("Sign Checked.")
+        else:
+            print ("Problem with signed Key")
+    if(req=="SUB"):
+        if(rep=="SOK"):
+            print ("Subscribed")
+        else:
+            print ("Could not subscribe.")
+    if(req=="USB"):
+        if(rep[3]=="SOK"):
+            print ("Unsubscribed")
+        else:
+            print ("Could not unsubscribe.")
+    if(req[0:3]=="DMB"):
+        if(rep[0:3]=="MBM"):
+            s=rep[5:]
+            print (s)
+        else:
+            print ("Could not show microblogs.")
+    if(req=="SBM"):
+        if(rep[0:3]=="BOK"):
+            print ("Succesfully blocked")
+        else:
+            print ("Could not tell blocked.")
+    if(req=="SUM"):
+        if(rep=="UOK"):
+            print ("Succesfully unblocked")
+        else:
+            print ("Could not tell unblocked.")    
+    if(req=="TIC"):
+        if(rep=="TOC"):
+            print ("Still Connected")
+        else:
+            print ("Not Connected")
+    if(req=="MSG"):
+        if(rep=="MOK"):
+            print ("Message Sent")
+        else:
+            print ("Message did not reach to its destination")
+    '''

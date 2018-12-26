@@ -5,6 +5,8 @@ import os
 import uuid
 from Crypto.PublicKey import RSA
 from Crypto import Random
+from Crypto.Hash import SHA256
+import time
 import queue
 import logging
 
@@ -33,8 +35,9 @@ class Connection(threading.Thread):
 
 
 class Server(threading.Thread):
-    def __init__(self, rw_socket, server_public, server_private):
+    def __init__(self, server_uuid, rw_socket, server_public, server_private):
         threading.Thread.__init__(self)
+        self.server_uuid = server_uuid
         self.rw_socket = rw_socket
         self.server_public = server_public
         self.server_private = server_private
@@ -42,32 +45,44 @@ class Server(threading.Thread):
         self.is_login = False
         self.is_subscribed = False
         self.is_block = False
+        # To encryption need to have client public key
+        self.client_public = ''
 
     def run(self):
         while True:
             if not self.is_subscribed:
                 msg = self.rw_socket.recv(1024).decode()
                 ret = self.parser(msg)
-                self.rw_socket.send(ret.encode())
+                # self.rw_socket.send(ret.encode())
             else:
-                pass
+                msg = self.server_private.decrypt(self.rw_socket.recv(1024).decode())
+                ret = self.parser(msg)
+                # self.rw_socket.send(self.client_public.encrypt(ret.encode(), 32))
 
     def parser(self, received):
+        if self.is_block:
+            return 'BLK'
+
         if received[0:3] == 'INF':
             rest = received[3:].strip()
             spl = rest.split(';')
             if len(spl) == 5 and '' not in spl:
                 ctrl_uuid = spl[0]
-                ctrl_host = spl[1]
-                ctrl_port = spl[2]
-                ctrl_is_blogger = spl[3]
-                nick = spl[4]
+                nick = spl[1]
+                ctrl_host = spl[2]
+                ctrl_port = spl[3]
+                is_blogger = spl[4]
                 client = Client(client_host=ctrl_host, client_port=ctrl_port, client_uuid=ctrl_uuid, server_private=self.server_private)
                 client.connect()
                 check = client.check_identity()
                 client.disconnect()
-                if check is not 'ERR' and str(check) == str(ctrl_uuid):
-                    # TODO: IF check is OK add to table or do nothing
+                if check is not 'ERR' and check == ctrl_uuid:
+                    if ctrl_uuid not in index_dict.keys():
+                        ext = [self.client_public, 'L', 'N', time.time()]
+                        spl = spl.extend(ext)
+                        index_dict[ctrl_uuid] = spl
+                    else:
+                        pass
                     return 'HEL'
                 elif self.is_block:
                     return 'BLK'
@@ -75,14 +90,22 @@ class Server(threading.Thread):
                     return 'REJ'
             else:
                 return 'REJ'
-        elif received == 'LSQ':
-            if not self.is_login:
-                return 'ERL'
-            elif self.is_block:
-                return 'BLK'
-            else:
-                # TODO: Return the list
-                pass
+
+        if received == 'WHO':
+            return 'MID' + ' ' + self.server_uuid
+
+        if not self.is_login:
+            return 'ERL'
+
+        if received == 'LSQ':
+            for k in index_dict.keys():
+                spl = index_dict[k]
+                # TODO:
+        elif received == 'PUB':
+            return 'MPK' + ' ' + self.server_public
+        elif received == 'SMS':
+            hash = SHA256.new('abcdefgh'.encode()).digest()
+            return 'SYS' + ' ' + hash + ';' + self.server_private.sign(hash, '')
 
 
 class Client(threading.Thread):
@@ -98,10 +121,10 @@ class Client(threading.Thread):
         # TODO: Get nickname from interface
         self.nickname = ''
         # Other side server information to connect & check
-        self.client_host = client_host
-        self.client_port = client_port
-        self.client_uuid = client_uuid
-        self.public_key = ''
+        self.client_host = client_host  # Response - To connect
+        self.client_port = client_port  # Response - To connect
+        self.client_uuid = client_uuid  # Response - To connect & check UUID
+        self.public_key = ''  # Response - To check public_key
         # Client - Server Information Queue - Probably not necessary
         # self.cs_info = cs_info
         # Socket
@@ -112,8 +135,7 @@ class Client(threading.Thread):
         # self.type = type
 
     def run(self):
-        self.connect()
-        # self.demand_public_key()
+        pass
 
     # Request & Response
     def connect(self):
@@ -132,17 +154,15 @@ class Client(threading.Thread):
              + ';' + self.nickname).encode())
         resp = self.sock.recv(1024).decode()
         self.parser(req, resp)
-        '''
-        if resp == 'HEL':
-            # TODO: Add to peer table as connected --> TO
-            pass
-        '''
 
     # Request
     def demand_peer_list(self):
         req = 'LSQ'
         self.sock.send(req.encode())
-        resp = self.sock.recv(1024).decode()
+        while True:
+            resp = self.sock.recv(1024).decode()
+            if resp == 'END':
+                break
         self.parser(req, resp)
 
     # Request & Response
@@ -176,7 +196,7 @@ class Client(threading.Thread):
     # Request
     def demand_microblog(self, microblog_quantity):
         # TODO Microblog integer or string??
-        req = 'DMB'+" "+microblog_quantity
+        req = 'DMB' + ' ' + str(microblog_quantity)
         self.sock.send(self.public_key.encrypt(req.encode(), 32).encode())
         resp = self.sock.recv(1024).decode()
         self.parser(req, resp)
@@ -223,7 +243,25 @@ class Client(threading.Thread):
 
     # Request & Response
     def parser(self, request, received):
-        if request == "WHO":
+        if received == 'BLK':
+            # TODO: Show rejected
+            return
+        elif received == 'ERL':
+            # TODO: Show not login
+            return
+        elif received == 'ERS' or 'ERK':
+            # TODO: Show not subscribed
+            return
+
+        if request[0:3] == 'INF':
+            if received == 'HEL':
+                # TODO: Add to peer table as connected --> TO
+                pass
+            elif received == 'REJ':
+                # TODO: Show rejected
+                pass
+
+        elif request == "WHO":
             if received[0:3] == "MID":
                 rest = received[3:].strip()
                 if not rest:
@@ -232,87 +270,54 @@ class Client(threading.Thread):
                     return 'ERR'
             else:
                 return 'ERR'
+
+        elif request == "LSQ":
+            if received[0:3] == "LSA":
+                rest = received[3:].strip()
+                # TODO: Show in interface - Update the list
+
         elif request == 'PUB':
-            if received[0:3]=="MPK":
+            if received[0:3] == "MPK":
                 rest = received[3:].strip()
                 if not rest:
                     self.public_key = rest
-                else:
-                    return 'ERK'
-            else:
-                return 'ERR'
+
         elif request == 'SMS':
-            if received[0:3]=="SYS":
+            if received[0:3] == "SYS":
                 rest = received[3:].strip()
                 spl = rest.split(';')
                 if spl.__len__() == 2:
-                    signature = spl[0]
-                    hash = spl[1]
-                    self.public_key.verify(hash, signature)
-                    # TODO: Add to dictionary & Update TYPE
+                    hash = spl[0]
+                    signature = spl[1]
+                    if self.public_key.verify(hash, signature):
+                        # TODO: Add to dictionary & Update TYPE
+                        pass
+                    else:
+                        pass
                 else:
                     return 'ERK'
-        '''
-        if(req=="SUB"):
-        else:
-            return 'ERR'
 
-        if(request=="LSQ"):
-            if(rep[0:3]=="LSA"):
-                s=rep[5:]
-                print (s)
+        elif request == 'SUB':
+            if received == 'SOK':
+                # TODO: Update in dictionary & Changes in interface
+                pass
+        elif request == 'USB':
+            if received == 'UOK':
+                # TODO: Update in dictionary & Changes in interface
+                pass
+
+        elif request[0:3] == "DMB":
+            if received[0:3]=="MBM":
+                rest = received[3:].strip()
+                # TODO: Save as txt files with Nickname & UUID & Show in interface
+
+        if request == "MSG":
+            if received == "MOK":
+                # TODO: Show "Message Sent" in Interface
+                pass
             else:
-                s=rep["Not logged in"]
-                print (s)
-        if(req=="PUB"):
-            if(rep[0:3]=="MPK"):
-                # TODO Add Host Public Key To Dictionary
-                print ("Key got.")
-            else:
-                print ("Problem Acquiring Key")
-        if(req=="SMS"):
-            if(rep[0:3]=="SYS"):
-                # TODO Check Hash
-                print ("Sign Checked.")
-            else:
-                print ("Problem with signed Key")
-        if(req=="SUB"):
-            if(rep=="SOK"):
-                print ("Subscribed")
-            else:
-                print ("Could not subscribe.")
-        if(req=="USB"):
-            if(rep[3]=="SOK"):
-                print ("Unsubscribed")
-            else:
-                print ("Could not unsubscribe.")
-        if(req[0:3]=="DMB"):
-            if(rep[0:3]=="MBM"):
-                s=rep[5:]
-                print (s)
-            else:
-                print ("Could not show microblogs.")
-        if(req=="SBM"):
-            if(rep[0:3]=="BOK"):
-                print ("Succesfully blocked")
-            else:
-                print ("Could not tell blocked.")
-        if(req=="SUM"):
-            if(rep=="UOK"):
-                print ("Succesfully unblocked")
-            else:
-                print ("Could not tell unblocked.")    
-        if(req=="TIC"):
-            if(rep=="TOC"):
-                print ("Still Connected")
-            else:
-                print ("Not Connected")
-        if(req=="MSG"):
-            if(rep=="MOK"):
-                print ("Message Sent")
-            else:
-                print ("Message did not reach to its destination")
-        '''
+                # TODO: Show "Message did not reach to its destination" in Interface
+                pass
 
 
 def get_ip():
@@ -382,7 +387,7 @@ def main():
         for word in value:
             index_file.write(word)
             # No commas if last column
-            if i != 8:
+            if i != 9:
                 index_file.write(",")
             i+=1
         index_file.write("\n")
