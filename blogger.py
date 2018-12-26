@@ -8,14 +8,15 @@ from Crypto import Random
 import queue
 import logging
 
-#Dictionary to store every information
+# Dictionary to store every information
 # TODO - a public key column can be added
-index_dict={}
+index_dict = {}
 
 
 class Connection(threading.Thread):
-    def __init__(self, server_host, server_port, server_public, server_private):
+    def __init__(self, server_uuid, server_host, server_port, server_public, server_private):
         threading.Thread.__init__(self)
+        self.server_uuid = server_uuid
         self.server_socket = socket.socket()
         self.server_host = server_host
         self.server_port = server_port
@@ -43,14 +44,13 @@ class Server(threading.Thread):
         self.is_block = False
 
     def run(self):
-        self.check_in_list()
         while True:
-            msg = self.rw_socket.recv(1024).decode()
-            ret = self.parser(msg)
-            self.rw_socket.send(ret.encode())
-
-    def check_in_list(self):
-        pass
+            if not self.is_subscribed:
+                msg = self.rw_socket.recv(1024).decode()
+                ret = self.parser(msg)
+                self.rw_socket.send(ret.encode())
+            else:
+                pass
 
     def parser(self, received):
         if received[0:3] == 'INF':
@@ -63,7 +63,9 @@ class Server(threading.Thread):
                 ctrl_is_blogger = spl[3]
                 nick = spl[4]
                 client = Client(client_host=ctrl_host, client_port=ctrl_port, client_uuid=ctrl_uuid, server_private=self.server_private)
+                client.connect()
                 check = client.check_identity()
+                client.disconnect()
                 if check is not 'ERR' and str(check) == str(ctrl_uuid):
                     # TODO: IF check is OK add to table or do nothing
                     return 'HEL'
@@ -81,9 +83,6 @@ class Server(threading.Thread):
             else:
                 # TODO: Return the list
                 pass
-
-    def response(self):
-        pass
 
 
 class Client(threading.Thread):
@@ -316,7 +315,20 @@ class Client(threading.Thread):
         '''
 
 
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('10.255.255.255', 1))
+        ip = s.getsockname()[0]
+    except:
+        ip = '127.0.0.1'
+    finally:
+        s.close()
+    return ip
+
+
 def main():
+    port = 12345
     exists_pem = os.path.isfile('id_rsa.pem')
     exists_pub = os.path.isfile('id_rsa.pub')
     exists_uuid = os.path.isfile('uuid.pem')
@@ -346,36 +358,36 @@ def main():
     # Reads any existing information of network from file
     if os.path.isfile('index_file.txt'):
         index_file = open('index_file.txt', 'r')
-        file_header=index_file.readline()
+        file_header = index_file.readline()
         data = index_file.readlines()
 
     # Copies available information to a dcitionary
         for line in data:
-            words = line.rstrip("\n").split(",")
+            words = line.rstrip().split(",")
             index_dict[words[0]] = words
         index_file.close()
+    else:
+        file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,PUBLIC_KEY,TYPE,TIMESTAMP,IS_ACTIVE'
 
-    # TODO: Interface & Connection Start
+    # TODO: Interface Implementation
+    connection = Connection(blogger_uuid, get_ip(), port, blogger_private_key, blogger_public_key)
+    connection.start()
 
     # (Over)Writes the information on dictionary to a file just before closing
-    '''
     index_file = open('index_file.txt', 'w')
     index_file.write(file_header)
     
     for value in index_dict.values():
-        i=0
+        i = 0
         for word in value:
             index_file.write(word)
-
             # No commas if last column
-            if(i!=6):
+            if i != 8:
                 index_file.write(",")
-            i=i+1
+            i+=1
         index_file.write("\n")
     index_file.close()
-    
-    print(file_header)
-    '''
+
 
 if __name__ == "__main__":
     main()

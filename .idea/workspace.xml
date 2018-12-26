@@ -2,10 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="66a2d5d5-b955-4176-bbf0-dd01b3a04845" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/T_Mac.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/T_Mac.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/blogger.py" beforeDir="false" afterPath="$PROJECT_DIR$/blogger.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/index_file.txt" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -57,34 +57,34 @@
     <session id="533762241">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="1" />
+          <entry key="project.closed" value="2" />
           <entry key="project.open.time.2" value="1" />
-          <entry key="project.open.time.3" value="1" />
-          <entry key="project.opened" value="2" />
+          <entry key="project.open.time.3" value="2" />
+          <entry key="project.opened" value="3" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="dummy" value="2" />
-          <entry key="py" value="3551" />
+          <entry key="py" value="4052" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="PLAIN_TEXT" value="2" />
-          <entry key="Python" value="3551" />
+          <entry key="Python" value="4052" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="3" />
+          <entry key="py" value="5" />
           <entry key="txt" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="PLAIN_TEXT" value="1" />
-          <entry key="Python" value="3" />
+          <entry key="Python" value="5" />
         </counts>
       </usages-collector>
     </session>
@@ -94,12 +94,21 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/blogger.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-2957">
-              <caret line="139" column="11" lean-forward="true" selection-start-line="139" selection-start-column="11" selection-end-line="139" selection-end-column="11" />
+            <state relative-caret-position="254">
+              <caret line="367" column="26" lean-forward="true" selection-start-line="367" selection-start-column="26" selection-end-line="367" selection-end-column="26" />
               <folding>
                 <element signature="e#0#16#0" expanded="true" />
-                <marker date="1545769150313" expanded="true" signature="1572:1578" ph="..." />
+                <marker date="1545822160203" expanded="true" signature="1645:1651" ph="..." />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/blogger_server.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="15">
+              <caret line="1" column="26" selection-start-line="1" selection-start-column="26" selection-end-line="1" selection-end-column="26" />
             </state>
           </provider>
         </entry>
@@ -107,8 +116,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/negotiator.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="15">
-              <caret line="12" column="4" selection-start-line="12" selection-start-column="4" selection-end-line="12" selection-end-column="4" />
+            <state relative-caret-position="240">
+              <caret line="24" column="22" lean-forward="true" selection-start-line="24" selection-start-column="22" selection-end-line="24" selection-end-column="22" />
             </state>
           </provider>
         </entry>
@@ -147,6 +156,7 @@
         <option value="$PROJECT_DIR$/negotiator.py" />
         <option value="$PROJECT_DIR$/Blogger/Connection.py" />
         <option value="$PROJECT_DIR$/Blogger/blogger.py" />
+        <option value="$PROJECT_DIR$/blogger_server.py" />
         <option value="$PROJECT_DIR$/blogger.py" />
       </list>
     </option>
@@ -308,27 +318,35 @@
     <entry file="file://$PROJECT_DIR$/id_rsa.pem" />
     <entry file="file://$PROJECT_DIR$/uuid.pem" />
     <entry file="file://$PROJECT_DIR$/Blogger/onnection.py" />
-    <entry file="file://$PROJECT_DIR$/negotiator.py">
+    <entry file="file://$PROJECT_DIR$/index_file.txt" />
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharmEdu2018.2/python_stubs/-1199943126/builtins.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="15">
-          <caret line="12" column="4" selection-start-line="12" selection-start-column="4" selection-end-line="12" selection-end-column="4" />
+        <state relative-caret-position="261">
+          <caret line="5149" column="8" selection-start-line="5149" selection-start-column="8" selection-end-line="5149" selection-end-column="8" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/index_file.txt">
+    <entry file="file://$PROJECT_DIR$/negotiator.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret column="43" selection-start-column="37" selection-end-column="43" />
+        <state relative-caret-position="240">
+          <caret line="24" column="22" lean-forward="true" selection-start-line="24" selection-start-column="22" selection-end-line="24" selection-end-column="22" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/blogger_server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15">
+          <caret line="1" column="26" selection-start-line="1" selection-start-column="26" selection-end-line="1" selection-end-column="26" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/blogger.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2957">
-          <caret line="139" column="11" lean-forward="true" selection-start-line="139" selection-start-column="11" selection-end-line="139" selection-end-column="11" />
+        <state relative-caret-position="254">
+          <caret line="367" column="26" lean-forward="true" selection-start-line="367" selection-start-column="26" selection-end-line="367" selection-end-column="26" />
           <folding>
             <element signature="e#0#16#0" expanded="true" />
-            <marker date="1545769150313" expanded="true" signature="1572:1578" ph="..." />
+            <marker date="1545822160203" expanded="true" signature="1645:1651" ph="..." />
           </folding>
         </state>
       </provider>
