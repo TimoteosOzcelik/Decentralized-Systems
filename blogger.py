@@ -43,6 +43,7 @@ class Server(threading.Thread):
         self.is_logged = False
         self.is_subscribed = False
         self.is_blocked = False
+
         # To encryption need to have client public key
         self.client_uuid = ''
         self.client_public = ''
@@ -51,14 +52,18 @@ class Server(threading.Thread):
         while True:
             if not self.is_subscribed:
                 msg = self.rw_socket.recv(1024).decode()
+                if msg == 'QUI':
+                    break
                 self.parser(msg)
             else:
-                rec = self.rw_socket.recv(1024).decode()
-                if rec[0:3] == 'LSQ' or rec[0:3] == 'INF':
-                    msg = self.rw_socket.recv(1024).decode()
+                rec = self.rw_socket.recv(1024)
+                msg = rec.decode()
+                if msg[0:3] == 'LSQ' or msg[0:3] == 'INF':
+                    if msg == 'QUI':
+                        break
                     self.parser(msg)
                 else:
-                    msg = self.m_private.decrypt(rec)
+                    msg = self.m_private.decrypt(rec).decode()
                     self.parser(msg)
 
     def parser(self, received):
@@ -69,75 +74,93 @@ class Server(threading.Thread):
             rest = received[3:].strip()
             spl = rest.split(';')
             if len(spl) == 5 and '' not in spl:
-                ctrl_uuid = spl[0]
-                ctrl_host = spl[2]
-                ctrl_port = int(spl[3])
+                c_uuid = spl[0]
+                c_nickname = spl[1]
+                c_host = spl[2]
+                c_port = int(spl[3])
 
-                client = Client(client_uuid=ctrl_uuid, client_host=ctrl_host, client_port=ctrl_port)
+                client = Client(client_uuid=c_uuid, client_host=c_host, client_port=c_port)
                 client.connect()
                 check = client.check_identity()
                 client.disconnect()
 
-                if check is not 'ERR' and check == ctrl_uuid:
-                    if ctrl_uuid not in index_dict.keys():
+                if check is not 'ERR' and check == c_uuid:
+                    if c_uuid not in index_dict.keys():
+                        # NOT IN DICTIONARY -> ADD EXTENDED SPL
                         ext = ['', 'L', 'N', time.time(), 'Y']
                         spl = spl.extend(ext)
-                        index_dict[ctrl_uuid] = spl
-                        # Writing on the file
+                        index_dict[c_uuid] = spl
+
+                        # WRITING THE UPDATED DICTIONARY
                         index_file = open('Indexes/index_file.txt', 'w')
                         file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,CONNECTION_FROM,CONNECTION_TO,TIMESTAMP,IS_ACTIVE'
                         index_file.write(file_header)
+
                         for value in index_dict.values():
                             i = 0
                             for word in value:
                                 index_file.write(word)
                                 if i != 8:
                                     index_file.write(",")
-                                i+=1
+                                i += 1
                             index_file.write("\n")
                         index_file.close()
-                        #
-                        self.client_uuid = ctrl_uuid
-                        self.rw_socket.send('HEL'.encode())
+
+                        # CHECK IS OK, RECORD UUID
+                        self.client_uuid = c_uuid
 
                     else:
-                        lst = index_dict[ctrl_uuid]
-                        lst[2] = ctrl_host
-                        lst[3] = ctrl_port
-                        lst[7] = str(time.time())
-                        lst[8] = 'A'
+                        lst = index_dict[c_uuid]
+                        # IF BLOCKED
                         if lst[5] == 'B':
                             self.is_blocked = True
                             self.rw_socket.send('BLK'.encode())
                             return
-                        elif lst[5] == 'S':
+
+                        # IN DICTIONARY --> UPDATE
+                        lst[1] = c_nickname
+                        lst[2] = c_host
+                        lst[3] = c_port
+                        lst[7] = str(time.time())
+                        lst[8] = 'A'
+
+                        # IF ALREADY SUBSCRIBED
+                        if lst[5] == 'S':
                             self.is_subscribed = True
+                        # IF NOT LOGGED-IN
                         elif lst[5] == 'N':
                             lst[5] = 'L'
-                        index_dict[ctrl_uuid] = lst
+                        # UPDATE DICTIONARY
+                        index_dict[c_uuid] = lst
+                    # IF HERE, MEAN: NON-BLOCKED - LOGIN ACCEPTED
+                    self.rw_socket.send('HEL'.encode())
                     self.is_logged = True
                     return
                 self.rw_socket.send('REJ'.encode())
             return
 
+        # RESPONSE - UUID CONTROL
         if received == 'WHO':
             self.rw_socket.send(('MID' + ' ' + str(self.m_uuid)).encode())
             return
 
-        # PUBLIC & PRIVATE KEY
+        # DEMANDED PUBLIC KEY
         elif received == 'RPB':
             self.rw_socket.send('MPK '.encode() + self.m_public.exportKey())
             return
 
+        # DEMANDED SIGNED HASH
         elif received == 'RSM':
             hash = SHA256.new('abcdefgh'.encode()).digest()
             self.rw_socket.send('SYS '.encode() + str(self.m_private.sign(hash, '')[0]).encode())
             return
 
+        # IF NOT LOGIN - ERROR
         if not self.is_logged:
             self.rw_socket.send('ERL'.encode())
             return
 
+        # LIST QUERY
         if received == 'LSQ':
             for k in index_dict.keys():
                 spl = index_dict[k]
@@ -146,10 +169,11 @@ class Server(threading.Thread):
                     snd += str(i) + ';'
                 snd = snd[:-1]
                 self.rw_socket.send(snd.encode())
+                time.sleep(0.25)
             self.rw_socket.send('END'.encode())
             return
 
-        # PUBLIC & PRIVATE KEY
+        # DEMAND PUBLIC KEY
         elif received == 'PUB':
             lst = index_dict[self.client_uuid]
             host = lst[1]
@@ -157,22 +181,25 @@ class Server(threading.Thread):
 
             client = Client(client_uuid=self.client_uuid, client_host=host, client_port=port)
             client.connect()
-            client.demand_public_key_reverse()
+            pk = client.demand_public_key_reverse()
             if client.demand_signed_hash_reverse():
-                pass
+                self.client_public = pk
             client.disconnect()
 
             self.rw_socket.send('MPK '.encode() + self.m_public.exportKey())
             return
 
+        # DEMAND SIGNED HASH
         elif received == 'SMS':
             hash = SHA256.new('abcdefgh'.encode()).digest()
             self.rw_socket.send('SYS '.encode() + str(self.m_private.sign(hash, '')[0]).encode())
             return
-            # return 'SYS' + ' ' + hash + ';' + self.server_private.sign(hash, '')[0]
 
-        # TODO
-        elif received == 'DMB':
+        # DEMAND MICROBLOG
+        elif received[0:3] == 'DMB':
+            n = int(received[3:].strip())
+            # TODO: Pull microblogs and send
+            '''
             for k in index_dict.keys():
                 spl = index_dict[k]
                 snd = ''
@@ -180,8 +207,10 @@ class Server(threading.Thread):
                     snd += str(i) + ';'
                 snd = snd[:-1]
                 self.rw_socket.send(self.client_public.encrypt(snd.encode(), 32)[0].encode())
+            '''
             self.rw_socket.send(self.client_public.encrypt('END'.encode(), 32)[0].encode())
 
+        # RECEIVED MESSAGE
         elif received[0:3] == 'MSG':
             rest = received[3:].strip()
             # TODO: Store message
@@ -341,6 +370,10 @@ class Client(threading.Thread):
         self.parser(req, resp)
         # TODO unblock from list
 
+    def quit(self):
+        req = 'QUI'
+        self.sock.send(req.encode())
+
     # Request & Response
     def parser(self, request, received):
         if received == 'BLK':
@@ -427,6 +460,29 @@ class Client(threading.Thread):
                 if self.error == 3:
                     # TODO: Set is_active 'N'
                     pass
+        # TODO: RPB & RSM
+
+        elif request == 'RPB':
+            if received[0:3] == "MPK":
+                rest = received[3:].strip()
+                if not rest:
+                    self.y_public_key = rest
+                return self.y_public_key
+
+        elif request == 'RSM':
+            if received[0:3] == "SYS":
+                rest = received[3:].strip()
+                spl = rest.split(';')
+                if spl.__len__() == 2:
+                    hash = spl[0]
+                    signature = spl[1]
+                    if self.y_public_key.verify(hash, signature):
+                        # TODO: Add to dictionary & Update TYPE
+                        return True
+                    else:
+                        return False
+                else:
+                    return 'ERK'
 
 
 
@@ -443,7 +499,7 @@ def get_ip():
 
 
 def main():
-    port = 12345
+    port = 12346
 
     exists_pem = os.path.isfile('id_rsa.pem')
     exists_pub = os.path.isfile('id_rsa.pub')
