@@ -1,6 +1,5 @@
 import threading
 import socket
-import sys
 import os
 import uuid
 from Crypto.PublicKey import RSA
@@ -39,13 +38,14 @@ class Server(threading.Thread):
         threading.Thread.__init__(self)
         self.server_uuid = server_uuid
         self.rw_socket = rw_socket
-        self.server_public = server_public
-        self.server_private = server_private
+        self.server_public = server_public # without exportKey
+        self.server_private = server_private # without exportKey
 
-        self.is_login = False
+        self.is_logged = False
         self.is_subscribed = False
-        self.is_block = False
+        self.is_blocked = False
         # To encryption need to have client public key
+        self.client_uuid = ''
         self.client_public = ''
 
     def run(self):
@@ -53,63 +53,98 @@ class Server(threading.Thread):
             if not self.is_subscribed:
                 msg = self.rw_socket.recv(1024).decode()
                 ret = self.parser(msg)
-                # self.rw_socket.send(ret.encode())
             else:
                 msg = self.server_private.decrypt(self.rw_socket.recv(1024).decode())
                 ret = self.parser(msg)
-                # self.rw_socket.send(self.client_public.encrypt(ret.encode(), 32))
 
     def parser(self, received):
-        if self.is_block:
-            return 'BLK'
+        if self.is_blocked:
+            self.rw_socket.send('BLK'.encode())
 
         if received[0:3] == 'INF':
             rest = received[3:].strip()
             spl = rest.split(';')
             if len(spl) == 5 and '' not in spl:
                 ctrl_uuid = spl[0]
-                nick = spl[1]
                 ctrl_host = spl[2]
                 ctrl_port = spl[3]
-                is_blogger = spl[4]
-                client = Client(client_host=ctrl_host, client_port=ctrl_port, client_uuid=ctrl_uuid, server_private=self.server_private)
+
+                client = Client(client_uuid=ctrl_uuid, client_host=ctrl_host, client_port=ctrl_port)
                 client.connect()
                 check = client.check_identity()
                 client.disconnect()
+
                 if check is not 'ERR' and check == ctrl_uuid:
                     if ctrl_uuid not in index_dict.keys():
-                        ext = [self.client_public, 'L', 'N', time.time()]
+                        ext = ['', 'L', 'N', time.time(), 'Y']
                         spl = spl.extend(ext)
                         index_dict[ctrl_uuid] = spl
-                    else:
-                        pass
-                    return 'HEL'
-                elif self.is_block:
-                    return 'BLK'
-                else:
-                    return 'REJ'
-            else:
-                return 'REJ'
+                        # TODO: ADD TO TABLE
+                        self.client_uuid = ctrl_uuid
+                        self.rw_socket.send('HEL'.encode())
+                        self.is_logged = True
+                self.rw_socket.send('REJ'.encode())
+            return
 
         if received == 'WHO':
-            return 'MID' + ' ' + self.server_uuid
+            self.rw_socket.send(('MID' + ' ' + str(self.server_uuid)).encode())
+            return
 
-        if not self.is_login:
-            return 'ERL'
+        if not self.is_logged:
+            self.rw_socket.send('ERL'.encode())
+            return
 
         if received == 'LSQ':
             for k in index_dict.keys():
                 spl = index_dict[k]
-                # TODO:
+                snd = ''
+                for i in spl[1:5]:
+                    snd += str(i) + ';'
+                snd = snd[:-1]
+                self.rw_socket.send(snd.encode())
+            self.rw_socket.send('END'.encode())
+            return
+
+        # PUBLIC & PRIVATE KEY
         elif received == 'PUB':
-            return 'MPK' + ' ' + self.server_public
+            ''' Client public key 
+            client = Client(client_uuid=ctrl_uuid, client_host=ctrl_host, client_port=ctrl_port)
+            client.connect()
+            check = client.demand_public_key()
+            client.disconnect()
+            '''
+            self.rw_socket.send('MPK '.encode() + self.server_public.exportKey())
+            return
+
         elif received == 'SMS':
             hash = SHA256.new('abcdefgh'.encode()).digest()
-            return 'SYS' + ' ' + hash + ';' + self.server_private.sign(hash, '')
+            self.rw_socket.send('SYS '.encode() + str(self.server_private.sign(hash, '')[0]).encode())
+            return
+            # return 'SYS' + ' ' + hash + ';' + self.server_private.sign(hash, '')[0]
 
+        # TODO
+        elif received == 'DMB':
+            for k in index_dict.keys():
+                spl = index_dict[k]
+                snd = ''
+                for i in spl[1:5]:
+                    snd += str(i) + ';'
+                snd = snd[:-1]
+                self.rw_socket.send(self.client_public.encrypt(snd.encode(), 32)[0].encode())
+            self.rw_socket.send(self.client_public.encrypt('END'.encode(), 32)[0].encode())
+
+        elif received[0:3] == 'MSG':
+            rest = received[3:].strip()
+            # TODO: Store message
+            self.rw_socket.send(self.client_public.encrypt('MOK'.encode(), 32)[0].encode())
+        else:
+            if self.is_subscribed:
+                self.rw_socket.send(self.client_public.encrypt('ERR'.encode(), 32))
+            else:
+                self.rw_socket.send('ERR'.encode())
 
 class Client(threading.Thread):
-    def __init__(self, client_host, client_port, client_uuid, server_private, server_uuid=None, server_host=None, server_port=None):
+    def __init__(self,  client_uuid, client_host, client_port, server_uuid=None, server_host=None, server_port=None, server_private=None):
         threading.Thread.__init__(self)
         # Blogger
         self.is_blogger = 'Y'
@@ -134,6 +169,9 @@ class Client(threading.Thread):
         # Request or Connect - Probably not necessary
         # self.type = type
 
+    def __del__(self):
+        pass
+
     def run(self):
         pass
 
@@ -144,7 +182,7 @@ class Client(threading.Thread):
     # Request & Response
     def disconnect(self):
         self.sock.close()
-        sys.exit()
+        self.__del__()
 
     # Request
     def login(self):
@@ -163,21 +201,21 @@ class Client(threading.Thread):
             resp = self.sock.recv(1024).decode()
             if resp == 'END':
                 break
-        self.parser(req, resp)
+            self.parser(req, resp)
 
     # Request & Response
     def demand_public_key(self):
         req = 'PUB'
         self.sock.send(req.encode())
         resp = self.sock.recv(1024).decode()
-        self.parser(req, resp)
+        return self.parser(req, resp)
 
     # Request & Response
     def demand_signed_hash(self, public_key):
         req = 'SMS'
         self.sock.send(req.encode())
         resp = self.sock.recv(1024).decode()
-        self.parser(req, resp)
+        return self.parser(req, resp)
 
     # Request
     def subscribe(self):
@@ -245,35 +283,33 @@ class Client(threading.Thread):
     def parser(self, request, received):
         if received == 'BLK':
             # TODO: Show rejected
-            return
+            return False
         elif received == 'ERL':
             # TODO: Show not login
-            return
+            return False
         elif received == 'ERS' or 'ERK':
             # TODO: Show not subscribed
-            return
+            return False
 
         if request[0:3] == 'INF':
             if received == 'HEL':
                 # TODO: Add to peer table as connected --> TO
-                pass
+                return
             elif received == 'REJ':
                 # TODO: Show rejected
-                pass
+                return
 
         elif request == "WHO":
             if received[0:3] == "MID":
                 rest = received[3:].strip()
                 if not rest:
                     return rest
-                else:
-                    return 'ERR'
-            else:
-                return 'ERR'
+            return 'ERR'
 
         elif request == "LSQ":
             if received[0:3] == "LSA":
                 rest = received[3:].strip()
+
                 # TODO: Show in interface - Update the list
 
         elif request == 'PUB':
@@ -311,13 +347,24 @@ class Client(threading.Thread):
                 rest = received[3:].strip()
                 # TODO: Save as txt files with Nickname & UUID & Show in interface
 
-        if request == "MSG":
+        elif request == "MSG":
             if received == "MOK":
                 # TODO: Show "Message Sent" in Interface
                 pass
             else:
                 # TODO: Show "Message did not reach to its destination" in Interface
                 pass
+
+        elif request == 'TIC':
+            if received == 'TOK':
+                # TODO: Update timestamp
+                self.error = 0
+            else:
+                self.error += 1
+                if self.error == 3:
+                    # TODO: Set is_active 'N'
+                    pass
+
 
 
 def get_ip():
@@ -340,24 +387,24 @@ def main():
     if exists_pem and exists_pub and exists_uuid:
         blogger_public_key = RSA.importKey(open('id_rsa.pem', 'rb').read())
         blogger_private_key = RSA.importKey(open('id_rsa.pub', 'rb').read())
-        blogger_uuid = uuid.UUID(open('uuid.pem', 'r').read())
+        blogger_uuid = uuid.UUID(open('uuid', 'r').read())
     else:
         random_generator = Random.new().read
         new_key = RSA.generate(2048, randfunc=random_generator)
         blogger_public_key = new_key.publickey()
         blogger_private_key = new_key
-        blogger_uuid = uuid.uuid4()
+        blogger_uuid = str(uuid.uuid4())
 
-        f = open('id_rsa.pem', 'w')
-        f.write(blogger_private_key.exportKey().decode())
+        f = open('id_rsa', 'w')
+        f.write(blogger_private_key.exportKey('PEM').decode())
         f.close()
 
         f = open('id_rsa.pub', 'w')
-        f.write(blogger_public_key.exportKey().decode())
+        f.write(blogger_public_key.exportKey('PEM').decode())
         f.close()
 
-        f = open('uuid.pem', 'w')
-        f.write(blogger_uuid.__str__())
+        f = open('uuid', 'w')
+        f.write(blogger_uuid)
         f.close()
 
     # Reads any existing information of network from file
@@ -372,21 +419,21 @@ def main():
             index_dict[words[0]] = words[1:]
         index_file.close()
     else:
-        file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,PUBLIC_KEY,TYPE,TIMESTAMP,IS_ACTIVE'
+        file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,PUBLIC_KEY,CONNECTION_FROM,CONNECTION_TO,TIMESTAMP,IS_ACTIVE'
 
     # TODO: Interface Implementation
+
     connection = Connection(blogger_uuid, get_ip(), port, blogger_private_key, blogger_public_key)
     connection.start()
 
     # (Over)Writes the information on dictionary to a file just before closing
     index_file = open('index_file.txt', 'w')
     index_file.write(file_header)
-    
+
     for value in index_dict.values():
         i = 0
         for word in value:
             index_file.write(word)
-            # No commas if last column
             if i != 9:
                 index_file.write(",")
             i+=1
