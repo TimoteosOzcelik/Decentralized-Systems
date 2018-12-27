@@ -29,17 +29,17 @@ class Connection(threading.Thread):
         self.server_socket.listen(5)
         while True:
             rw_socket, addr = self.server_socket.accept()
-            server = Server(rw_socket=rw_socket, server_public=self.server_public, server_private=self.server_private)
+            server = Server(server_uuid=self.server_uuid, rw_socket=rw_socket, server_public=self.server_public, server_private=self.server_private)
             server.start()
 
 
 class Server(threading.Thread):
     def __init__(self, server_uuid, rw_socket, server_public, server_private):
         threading.Thread.__init__(self)
-        self.server_uuid = server_uuid
+        self.m_uuid = server_uuid
         self.rw_socket = rw_socket
-        self.server_public = server_public # without exportKey
-        self.server_private = server_private # without exportKey
+        self.m_public = server_public # without exportKey
+        self.m_private = server_private # without exportKey
 
         self.is_logged = False
         self.is_subscribed = False
@@ -54,7 +54,7 @@ class Server(threading.Thread):
                 msg = self.rw_socket.recv(1024).decode()
                 ret = self.parser(msg)
             else:
-                msg = self.server_private.decrypt(self.rw_socket.recv(1024).decode())
+                msg = self.m_private.decrypt(self.rw_socket.recv(1024).decode())
                 ret = self.parser(msg)
 
     def parser(self, received):
@@ -67,7 +67,7 @@ class Server(threading.Thread):
             if len(spl) == 5 and '' not in spl:
                 ctrl_uuid = spl[0]
                 ctrl_host = spl[2]
-                ctrl_port = spl[3]
+                ctrl_port = int(spl[3])
 
                 client = Client(client_uuid=ctrl_uuid, client_host=ctrl_host, client_port=ctrl_port)
                 client.connect()
@@ -79,7 +79,15 @@ class Server(threading.Thread):
                         ext = ['', 'L', 'N', time.time(), 'Y']
                         spl = spl.extend(ext)
                         index_dict[ctrl_uuid] = spl
-                        # TODO: ADD TO TABLE
+                        # Writing on the file
+                        index_file = open('index_file.txt', 'a')
+                        to_write = ''
+                        for s in spl:
+                            to_write += str(s) + ','
+                        to_write = to_write[:-1]
+                        index_file.write(to_write + '\n')
+                        index_file.close()
+                        #
                         self.client_uuid = ctrl_uuid
                         self.rw_socket.send('HEL'.encode())
                         self.is_logged = True
@@ -87,7 +95,7 @@ class Server(threading.Thread):
             return
 
         if received == 'WHO':
-            self.rw_socket.send(('MID' + ' ' + str(self.server_uuid)).encode())
+            self.rw_socket.send(('MID' + ' ' + str(self.m_uuid)).encode())
             return
 
         if not self.is_logged:
@@ -107,18 +115,25 @@ class Server(threading.Thread):
 
         # PUBLIC & PRIVATE KEY
         elif received == 'PUB':
-            ''' Client public key 
-            client = Client(client_uuid=ctrl_uuid, client_host=ctrl_host, client_port=ctrl_port)
+            lst = index_dict[self.client_uuid]
+            host = lst[1]
+            port = int(lst[2])
+
+            client = Client(client_uuid=self.client_uuid, client_host=host, client_port=port)
             client.connect()
-            check = client.demand_public_key()
+
+            pk = client.demand_public_key()
+            if client.demand_signed_hash():
+                pass
+
             client.disconnect()
-            '''
-            self.rw_socket.send('MPK '.encode() + self.server_public.exportKey())
+
+            self.rw_socket.send('MPK '.encode() + self.m_public.exportKey())
             return
 
         elif received == 'SMS':
             hash = SHA256.new('abcdefgh'.encode()).digest()
-            self.rw_socket.send('SYS '.encode() + str(self.server_private.sign(hash, '')[0]).encode())
+            self.rw_socket.send('SYS '.encode() + str(self.m_private.sign(hash, '')[0]).encode())
             return
             # return 'SYS' + ' ' + hash + ';' + self.server_private.sign(hash, '')[0]
 
@@ -149,17 +164,17 @@ class Client(threading.Thread):
         # Blogger
         self.is_blogger = 'Y'
         # Its server information to share
-        self.server_uuid = server_uuid  # Request - For login protocol
-        self.server_host = server_host  # Request - For login protocol
-        self.server_port = server_port  # Request - For login protocol
-        self.server_private = server_private  # Request & Response - For decryption
+        self.m_uuid = server_uuid  # Request - For login protocol
+        self.m_host = server_host  # Request - For login protocol
+        self.m_port = server_port  # Request - For login protocol
+        self.m_private = server_private  # Request & Response - For decryption
         # TODO: Get nickname from interface
         self.nickname = ''
         # Other side server information to connect & check
-        self.client_host = client_host  # Response - To connect
-        self.client_port = client_port  # Response - To connect
-        self.client_uuid = client_uuid  # Response - To connect & check UUID
-        self.public_key = ''  # Response - To check public_key
+        self.y_host = client_host  # Response - To connect
+        self.y_port = client_port  # Response - To connect
+        self.y_uuid = client_uuid  # Response - To connect & check UUID
+        self.y_public_key = ''  # Response - To check public_key
         # Client - Server Information Queue - Probably not necessary
         # self.cs_info = cs_info
         # Socket
@@ -177,7 +192,7 @@ class Client(threading.Thread):
 
     # Request & Response
     def connect(self):
-        self.sock.connect((self.client_host, self.client_port))
+        self.sock.connect((self.y_host, self.y_port))
 
     # Request & Response
     def disconnect(self):
@@ -188,7 +203,7 @@ class Client(threading.Thread):
     def login(self):
         req = 'INF'
         self.sock.send(
-            (req + self.server_uuid + ';' + self.server_host + ';' + self.server_port + ';' + self.is_blogger
+            (req + self.m_uuid + ';' + self.m_host + ';' + self.m_port + ';' + self.is_blogger
              + ';' + self.nickname).encode())
         resp = self.sock.recv(1024).decode()
         self.parser(req, resp)
@@ -211,7 +226,7 @@ class Client(threading.Thread):
         return self.parser(req, resp)
 
     # Request & Response
-    def demand_signed_hash(self, public_key):
+    def demand_signed_hash(self):
         req = 'SMS'
         self.sock.send(req.encode())
         resp = self.sock.recv(1024).decode()
@@ -220,22 +235,22 @@ class Client(threading.Thread):
     # Request
     def subscribe(self):
         req = 'SUB'
-        self.sock.send(self.public_key.encrypt(req.encode(), 32).encode())
+        self.sock.send(self.y_public_key.encrypt(req.encode(), 32).encode())
         resp = self.sock.recv(1024).decode()
         self.parser(req, resp)
 
     # Request
     def unsubscribe(self):
         req = 'USB'
-        self.sock.send(self.public_key.encrypt(req.encode(), 32).encode())
+        self.sock.send(self.y_public_key.encrypt(req.encode(), 32).encode())
         resp = self.sock.recv(1024).decode()
         self.parser(req, resp)
 
     # Request
     def demand_microblog(self, microblog_quantity):
         # TODO Microblog integer or string??
-        req = 'DMB' + ' ' + str(microblog_quantity)
-        self.sock.send(self.public_key.encrypt(req.encode(), 32).encode())
+        req = 'DMB ' + str(microblog_quantity)
+        self.sock.send(self.y_public_key.encrypt(req.encode(), 32).encode())
         resp = self.sock.recv(1024).decode()
         self.parser(req, resp)
 
@@ -258,8 +273,8 @@ class Client(threading.Thread):
 
     # Request
     def send_message(self, message):
-        req = 'MSG'+" "+message
-        self.sock.send(self.public_key.encrypt(req.encode(), 32).encode())
+        req = 'MSG ' + message
+        self.sock.send(self.y_public_key.encrypt(req.encode(), 32).encode())
         resp = self.sock.recv(1024).decode()
         self.parser(req, resp)
 
@@ -316,7 +331,8 @@ class Client(threading.Thread):
             if received[0:3] == "MPK":
                 rest = received[3:].strip()
                 if not rest:
-                    self.public_key = rest
+                    self.y_public_key = rest
+                return self.y_public_key
 
         elif request == 'SMS':
             if received[0:3] == "SYS":
@@ -325,11 +341,11 @@ class Client(threading.Thread):
                 if spl.__len__() == 2:
                     hash = spl[0]
                     signature = spl[1]
-                    if self.public_key.verify(hash, signature):
+                    if self.y_public_key.verify(hash, signature):
                         # TODO: Add to dictionary & Update TYPE
-                        pass
+                        return True
                     else:
-                        pass
+                        return False
                 else:
                     return 'ERK'
 
