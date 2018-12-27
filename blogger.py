@@ -217,9 +217,8 @@ class Server(threading.Thread):
                 self.rw_socket.send('ERR'.encode())
 
 
-class Client(threading.Thread):
+class Client(object):
     def __init__(self,  client_uuid, client_host, client_port, server_uuid=None, server_host=None, server_port=None, server_private=None):
-        threading.Thread.__init__(self)
         # Blogger
         self.is_blogger = 'Y'
         # Its server information to share
