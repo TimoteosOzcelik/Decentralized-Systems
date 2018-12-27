@@ -58,10 +58,13 @@ class Server(threading.Thread):
             else:
                 rec = self.rw_socket.recv(1024)
                 msg = rec.decode()
+
+                # SUBSCRIBE BUT NON-ENCRYPTED PROTOCOL MESSAGES
                 if msg[0:3] == 'LSQ' or msg[0:3] == 'INF':
                     if msg == 'QUI':
                         break
                     self.parser(msg)
+                # SUBSCRIBE AND ENCRYPTED PROTOCOL MESSAGES
                 else:
                     msg = self.m_private.decrypt(rec).decode()
                     self.parser(msg)
