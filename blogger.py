@@ -221,26 +221,27 @@ class Client(object):
     def __init__(self,  client_uuid, client_host, client_port, server_uuid=None, server_host=None, server_port=None, server_private=None):
         # Blogger
         self.is_blogger = 'Y'
+
         # Its server information to share
         self.m_uuid = server_uuid  # Request - For login protocol
         self.m_host = server_host  # Request - For login protocol
         self.m_port = server_port  # Request - For login protocol
         self.m_private = server_private  # Request & Response - For decryption
+
         # TODO: Get nickname from interface
         self.nickname = ''
+
         # Other side server information to connect & check
         self.y_host = client_host  # Response - To connect
         self.y_port = client_port  # Response - To connect
         self.y_uuid = client_uuid  # Response - To connect & check UUID
         self.y_public_key = ''  # Response - To check public_key
-        # Client - Server Information Queue - Probably not necessary
-        # self.cs_info = cs_info
+
         # Socket
         self.sock = socket.socket()
+
         # False response count
         self.error = 0
-        # Request or Connect - Probably not necessary
-        # self.type = type
 
     def __del__(self):
         pass
