@@ -176,6 +176,7 @@ class Server(threading.Thread):
             pk = client.demand_public_key_reverse()
             if client.demand_signed_hash_reverse():
                 self.client_public = pk
+                # TODO: Add keys file
             client.disconnect()
 
             self.rw_socket.send('MPK '.encode() + self.m_public.exportKey())
@@ -374,6 +375,14 @@ class Client(threading.Thread):
         self.parser(req, resp)
         # TODO unblock from list
 
+    def publish_microblog(self):
+        # TODO: Add microblog file
+        pass
+
+    def remove_microblog(self):
+        # TODO: Delete microblog file
+        pass
+
     def quit(self):
         req = 'QUI'
         self.sock.send(req.encode())
@@ -416,6 +425,7 @@ class Client(threading.Thread):
                 rest = received[3:].strip()
                 if not rest:
                     self.y_public_key = rest
+                    # TODO: Add keys file
                 return self.y_public_key
 
         elif request == 'SMS':
