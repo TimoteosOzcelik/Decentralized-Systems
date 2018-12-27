@@ -80,12 +80,17 @@ class Server(threading.Thread):
                         spl = spl.extend(ext)
                         index_dict[ctrl_uuid] = spl
                         # Writing on the file
-                        index_file = open('index_file.txt', 'a')
-                        to_write = ''
-                        for s in spl:
-                            to_write += str(s) + ','
-                        to_write = to_write[:-1]
-                        index_file.write(to_write + '\n')
+                        index_file = open('index_file.txt', 'w')
+                        file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,PUBLIC_KEY,CONNECTION_FROM,CONNECTION_TO,TIMESTAMP,IS_ACTIVE'
+                        index_file.write(file_header)
+                        for value in index_dict.values():
+                            i = 0
+                            for word in value:
+                                index_file.write(word)
+                                if i != 9:
+                                    index_file.write(",")
+                                i+=1
+                            index_file.write("\n")
                         index_file.close()
                         #
                         self.client_uuid = ctrl_uuid
