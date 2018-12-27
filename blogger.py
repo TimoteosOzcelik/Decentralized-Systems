@@ -203,15 +203,6 @@ class Server(threading.Thread):
         elif received[0:3] == 'DMB':
             n = int(received[3:].strip())
             # TODO: Pull microblogs and send
-            '''
-            for k in index_dict.keys():
-                spl = index_dict[k]
-                snd = ''
-                for i in spl[1:5]:
-                    snd += str(i) + ';'
-                snd = snd[:-1]
-                self.rw_socket.send(self.client_public.encrypt(snd.encode(), 32)[0].encode())
-            '''
             self.rw_socket.send(self.client_public.encrypt('END'.encode(), 32)[0].encode())
 
         # RECEIVED MESSAGE
