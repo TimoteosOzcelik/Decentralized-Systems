@@ -12,6 +12,7 @@ import logging
 # Dictionary to store every information
 # TODO - a public key column can be added
 index_dict = {}
+key_dict = {}
 
 
 class Connection(threading.Thread):
@@ -50,11 +51,16 @@ class Server(threading.Thread):
 
     def run(self):
         while True:
+            # TODO: FIX
             if not self.is_subscribed:
                 msg = self.rw_socket.recv(1024).decode()
                 ret = self.parser(msg)
             else:
-                msg = self.m_private.decrypt(self.rw_socket.recv(1024).decode())
+                rec = self.rw_socket.recv(1024).decode()
+                if rec[0:3] in ['LSQ']:
+                    msg = self.rw_socket.recv(1024).decode()
+                    ret = self.parser(msg)
+                msg = self.m_private.decrypt(rec)
                 ret = self.parser(msg)
 
     def parser(self, received):
@@ -68,6 +74,9 @@ class Server(threading.Thread):
                 ctrl_uuid = spl[0]
                 ctrl_host = spl[2]
                 ctrl_port = int(spl[3])
+                if ctrl_uuid in index_dict.keys():
+                    info = index_dict[ctrl_uuid]
+
 
                 client = Client(client_uuid=ctrl_uuid, client_host=ctrl_host, client_port=ctrl_port)
                 client.connect()
@@ -80,14 +89,14 @@ class Server(threading.Thread):
                         spl = spl.extend(ext)
                         index_dict[ctrl_uuid] = spl
                         # Writing on the file
-                        index_file = open('index_file.txt', 'w')
-                        file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,PUBLIC_KEY,CONNECTION_FROM,CONNECTION_TO,TIMESTAMP,IS_ACTIVE'
+                        index_file = open('Indexes/index_file.txt', 'w+')
+                        file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,CONNECTION_FROM,CONNECTION_TO,TIMESTAMP,IS_ACTIVE'
                         index_file.write(file_header)
                         for value in index_dict.values():
                             i = 0
                             for word in value:
                                 index_file.write(word)
-                                if i != 9:
+                                if i != 8:
                                     index_file.write(",")
                                 i+=1
                             index_file.write("\n")
@@ -96,11 +105,24 @@ class Server(threading.Thread):
                         self.client_uuid = ctrl_uuid
                         self.rw_socket.send('HEL'.encode())
                         self.is_logged = True
+                    else:
+                        # TODO
+                        pass
                 self.rw_socket.send('REJ'.encode())
             return
 
         if received == 'WHO':
             self.rw_socket.send(('MID' + ' ' + str(self.m_uuid)).encode())
+            return
+
+        # PUBLIC & PRIVATE KEY
+        elif received == 'RPB':
+            self.rw_socket.send('MPK '.encode() + self.m_public.exportKey())
+            return
+
+        elif received == 'RSM':
+            hash = SHA256.new('abcdefgh'.encode()).digest()
+            self.rw_socket.send('SYS '.encode() + str(self.m_private.sign(hash, '')[0]).encode())
             return
 
         if not self.is_logged:
@@ -126,11 +148,9 @@ class Server(threading.Thread):
 
             client = Client(client_uuid=self.client_uuid, client_host=host, client_port=port)
             client.connect()
-
-            pk = client.demand_public_key()
-            if client.demand_signed_hash():
+            client.demand_public_key_reverse()
+            if client.demand_signed_hash_reverse():
                 pass
-
             client.disconnect()
 
             self.rw_socket.send('MPK '.encode() + self.m_public.exportKey())
@@ -237,6 +257,19 @@ class Client(threading.Thread):
         resp = self.sock.recv(1024).decode()
         return self.parser(req, resp)
 
+    # Request & Response
+    def demand_public_key_reverse(self):
+        req = 'RPB'
+        self.sock.send(req.encode())
+        resp = self.sock.recv(1024).decode()
+        return self.parser(req, resp)
+
+    # Request & Response
+    def demand_signed_hash_reverse(self):
+        req = 'RSM'
+        self.sock.send(req.encode())
+        resp = self.sock.recv(1024).decode()
+        return self.parser(req, resp)
     # Request
     def subscribe(self):
         req = 'SUB'
@@ -429,18 +462,20 @@ def main():
         f.close()
 
     # Reads any existing information of network from file
-    if os.path.isfile('index_file.txt'):
-        index_file = open('index_file.txt', 'r')
-        file_header = index_file.readline()
+    if os.path.isfile('Indexes/index_file'):
+        index_file = open('Indexes/index_file', 'r')
+        file_header = index_file.readline().strip('\n')
         data = index_file.readlines()
 
     # Copies available information to a dictionary
         for line in data:
-            words = line.rstrip().split(",")
-            index_dict[words[0]] = words[1:]
+            print(line)
+            if line:
+                words = line.rstrip('\n').split(",")
+                index_dict[words[0]] = words
         index_file.close()
     else:
-        file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,PUBLIC_KEY,CONNECTION_FROM,CONNECTION_TO,TIMESTAMP,IS_ACTIVE'
+        file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,CONNECTION_FROM,CONNECTION_TO,TIMESTAMP,IS_ACTIVE'
 
     # TODO: Interface Implementation
 
@@ -448,14 +483,15 @@ def main():
     connection.start()
 
     # (Over)Writes the information on dictionary to a file just before closing
-    index_file = open('index_file.txt', 'w')
-    index_file.write(file_header)
+    # open('Indexes/index_file', 'w').close()
+    index_file = open('Indexes/index_file', 'w')
+    index_file.write(file_header + '\n')
 
     for value in index_dict.values():
         i = 0
         for word in value:
             index_file.write(word)
-            if i != 9:
+            if i != 8:
                 index_file.write(",")
             i+=1
         index_file.write("\n")
