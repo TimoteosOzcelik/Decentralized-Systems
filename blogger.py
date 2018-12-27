@@ -9,8 +9,6 @@ import time
 import queue
 import logging
 
-# Dictionary to store every information
-# TODO - a public key column can be added
 index_dict = {}
 key_dict = {}
 
@@ -51,17 +49,17 @@ class Server(threading.Thread):
 
     def run(self):
         while True:
-            # TODO: FIX
             if not self.is_subscribed:
                 msg = self.rw_socket.recv(1024).decode()
-                ret = self.parser(msg)
+                self.parser(msg)
             else:
                 rec = self.rw_socket.recv(1024).decode()
-                if rec[0:3] in ['LSQ']:
+                if rec[0:3] == 'LSQ' or rec[0:3] == 'INF':
                     msg = self.rw_socket.recv(1024).decode()
-                    ret = self.parser(msg)
-                msg = self.m_private.decrypt(rec)
-                ret = self.parser(msg)
+                    self.parser(msg)
+                else:
+                    msg = self.m_private.decrypt(rec)
+                    self.parser(msg)
 
     def parser(self, received):
         if self.is_blocked:
@@ -74,9 +72,6 @@ class Server(threading.Thread):
                 ctrl_uuid = spl[0]
                 ctrl_host = spl[2]
                 ctrl_port = int(spl[3])
-                if ctrl_uuid in index_dict.keys():
-                    info = index_dict[ctrl_uuid]
-
 
                 client = Client(client_uuid=ctrl_uuid, client_host=ctrl_host, client_port=ctrl_port)
                 client.connect()
@@ -89,7 +84,7 @@ class Server(threading.Thread):
                         spl = spl.extend(ext)
                         index_dict[ctrl_uuid] = spl
                         # Writing on the file
-                        index_file = open('Indexes/index_file.txt', 'w+')
+                        index_file = open('Indexes/index_file.txt', 'w')
                         file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,CONNECTION_FROM,CONNECTION_TO,TIMESTAMP,IS_ACTIVE'
                         index_file.write(file_header)
                         for value in index_dict.values():
@@ -104,10 +99,24 @@ class Server(threading.Thread):
                         #
                         self.client_uuid = ctrl_uuid
                         self.rw_socket.send('HEL'.encode())
-                        self.is_logged = True
+
                     else:
-                        # TODO
-                        pass
+                        lst = index_dict[ctrl_uuid]
+                        lst[2] = ctrl_host
+                        lst[3] = ctrl_port
+                        lst[7] = str(time.time())
+                        lst[8] = 'A'
+                        if lst[5] == 'B':
+                            self.is_blocked = True
+                            self.rw_socket.send('BLK'.encode())
+                            return
+                        elif lst[5] == 'S':
+                            self.is_subscribed = True
+                        elif lst[5] == 'N':
+                            lst[5] = 'L'
+                        index_dict[ctrl_uuid] = lst
+                    self.is_logged = True
+                    return
                 self.rw_socket.send('REJ'.encode())
             return
 
@@ -435,6 +444,7 @@ def get_ip():
 
 def main():
     port = 12345
+
     exists_pem = os.path.isfile('id_rsa.pem')
     exists_pub = os.path.isfile('id_rsa.pub')
     exists_uuid = os.path.isfile('uuid.pem')

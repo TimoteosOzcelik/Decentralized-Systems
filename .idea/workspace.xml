@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="66a2d5d5-b955-4176-bbf0-dd01b3a04845" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/blogger.py" beforeDir="false" afterPath="$PROJECT_DIR$/blogger.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -66,13 +65,13 @@
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="dummy" value="2" />
-          <entry key="py" value="10225" />
+          <entry key="py" value="10780" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="PLAIN_TEXT" value="2" />
-          <entry key="Python" value="10225" />
+          <entry key="Python" value="10780" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
@@ -95,8 +94,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/blogger.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="387">
-              <caret line="483" lean-forward="true" selection-start-line="483" selection-end-line="483" />
+            <state relative-caret-position="370">
+              <caret line="170" column="18" lean-forward="true" selection-start-line="170" selection-start-column="18" selection-end-line="170" selection-end-column="18" />
               <folding>
                 <element signature="e#0#16#0" expanded="true" />
               </folding>
@@ -129,6 +128,8 @@
       <find>self.public_key</find>
       <find>index_file = open('Indexes/index_file'</find>
       <find>NICK,IP,PORT,IS_BLOGGER,CONNECTION_FROM,CONNECTION_TO,TIMESTAMP,IS_ACTIVE</find>
+      <find>HEL</find>
+      <find>self.client_uuid</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -354,8 +355,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/blogger.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="387">
-          <caret line="483" lean-forward="true" selection-start-line="483" selection-end-line="483" />
+        <state relative-caret-position="370">
+          <caret line="170" column="18" lean-forward="true" selection-start-line="170" selection-start-column="18" selection-end-line="170" selection-end-column="18" />
           <folding>
             <element signature="e#0#16#0" expanded="true" />
           </folding>
