@@ -147,17 +147,6 @@ class Server(threading.Thread):
             self.rw_socket.send(('MID' + ' ' + str(self.m_uuid)).encode())
             return
 
-        # DEMANDED PUBLIC KEY
-        elif received == 'RPB':
-            self.rw_socket.send('MPK '.encode() + self.m_public.exportKey())
-            return
-
-        # DEMANDED SIGNED HASH
-        elif received == 'RSM':
-            hash = SHA256.new('abcdefgh'.encode()).digest()
-            self.rw_socket.send('SYS '.encode() + str(self.m_private.sign(hash, '')[0]).encode())
-            return
-
         # IF NOT LOGIN - ERROR
         if not self.is_logged:
             self.rw_socket.send('ERL'.encode())
@@ -192,6 +181,17 @@ class Server(threading.Thread):
             self.rw_socket.send('MPK '.encode() + self.m_public.exportKey())
             return
 
+                # DEMANDED PUBLIC KEY
+        elif received == 'RPB':
+            self.rw_socket.send('MPK '.encode() + self.m_public.exportKey())
+            return
+
+        # DEMANDED SIGNED HASH
+        elif received == 'RSM':
+            hash = SHA256.new('abcdefgh'.encode()).digest()
+            self.rw_socket.send('SYS '.encode() + str(self.m_private.sign(hash, '')[0]).encode())
+            return
+
         # DEMAND SIGNED HASH
         elif received == 'SMS':
             hash = SHA256.new('abcdefgh'.encode()).digest()
@@ -223,6 +223,7 @@ class Server(threading.Thread):
                 self.rw_socket.send(self.client_public.encrypt('ERR'.encode(), 32))
             else:
                 self.rw_socket.send('ERR'.encode())
+
 
 class Client(threading.Thread):
     def __init__(self,  client_uuid, client_host, client_port, server_uuid=None, server_host=None, server_port=None, server_private=None):
