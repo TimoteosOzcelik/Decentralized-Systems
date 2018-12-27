@@ -320,7 +320,7 @@ class Client(object):
 
     # Request
     def demand_microblog(self, microblog_quantity):
-        # TODO Microblog integer or string??
+        # TODO: Microblog from interface
         req = 'DMB ' + str(microblog_quantity)
         self.sock.send(self.y_public_key.encrypt(req.encode(), 32).encode())
         resp = self.sock.recv(1024).decode()
@@ -334,14 +334,12 @@ class Client(object):
         return self.parser(req, resp)
 
     # Request & Response
+    # TODO: Timestamp necessary? IS_ACTIVE column can be used!
     def check_connection(self):
         req = 'TIC'
         self.sock.send(req.encode())
         resp = self.sock.recv(1024).decode()
         self.parser(req, resp)
-        # TODO: Update timestamp
-        # TODO Maybe Add Timeout for no response
-        # If no response may break entire communication?
 
     # Request
     def send_message(self, message):
@@ -356,7 +354,7 @@ class Client(object):
         self.sock.send(req.encode())
         resp = self.sock.recv(1024).decode()
         self.parser(req, resp)
-        # TODO block from list
+        # TODO: Block from list
 
     # Response
     def unblocked(self):
@@ -408,7 +406,6 @@ class Client(object):
         elif request == "LSQ":
             if received[0:3] == "LSA":
                 rest = received[3:].strip()
-
                 # TODO: Show in interface - Update the list
 
         elif request == 'PUB':
@@ -416,8 +413,31 @@ class Client(object):
                 rest = received[3:].strip()
                 if not rest:
                     self.y_public_key = rest
-                    # TODO: Add keys file
+                    # TODO: Add keys file - IFNOT
                 return self.y_public_key
+
+        elif request == 'RPB':
+            if received[0:3] == "MPK":
+                rest = received[3:].strip()
+                if not rest:
+                    self.y_public_key = rest
+                    # TODO: Add keys file - IFNOT
+                return self.y_public_key
+
+        elif request == 'RSM':
+            if received[0:3] == "SYS":
+                rest = received[3:].strip()
+                spl = rest.split(';')
+                if spl.__len__() == 2:
+                    hash = spl[0]
+                    signature = spl[1]
+                    if self.y_public_key.verify(hash, signature):
+                        # TODO: Add to dictionary & Update TYPE
+                        return True
+                    else:
+                        return False
+                else:
+                    return 'ERK'
 
         elif request == 'SMS':
             if received[0:3] == "SYS":
@@ -427,7 +447,7 @@ class Client(object):
                     hash = spl[0]
                     signature = spl[1]
                     if self.y_public_key.verify(hash, signature):
-                        # TODO: Add to dictionary & Update TYPE
+                        # TODO: Add to keyss
                         return True
                     else:
                         return False
@@ -458,37 +478,12 @@ class Client(object):
 
         elif request == 'TIC':
             if received == 'TOK':
-                # TODO: Update timestamp
                 self.error = 0
             else:
                 self.error += 1
                 if self.error == 3:
                     # TODO: Set is_active 'N'
                     pass
-        # TODO: RPB & RSM
-
-        elif request == 'RPB':
-            if received[0:3] == "MPK":
-                rest = received[3:].strip()
-                if not rest:
-                    self.y_public_key = rest
-                return self.y_public_key
-
-        elif request == 'RSM':
-            if received[0:3] == "SYS":
-                rest = received[3:].strip()
-                spl = rest.split(';')
-                if spl.__len__() == 2:
-                    hash = spl[0]
-                    signature = spl[1]
-                    if self.y_public_key.verify(hash, signature):
-                        # TODO: Add to dictionary & Update TYPE
-                        return True
-                    else:
-                        return False
-                else:
-                    return 'ERK'
-
 
 
 def get_ip():
