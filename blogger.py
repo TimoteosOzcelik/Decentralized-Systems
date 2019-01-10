@@ -14,22 +14,31 @@ from Crypto.Hash import SHA256
 import datetime, time
 import queue
 
-class Connection(threading.Thread):
-    def __init__(self, server_uuid, server_host, server_port, server_public, server_private):
+class Listen(threading.Thread):
+    def __init__(self, my_uuid, host, port, public_key, private_key, key_dict, info_dict, new_blogs):
         threading.Thread.__init__(self)
-        self.server_uuid = server_uuid
-        self.server_socket = socket.socket()
-        self.server_host = server_host
-        self.server_port = server_port
-        self.server_public = server_public
-        self.server_private = server_private
-
+        self.uuid = my_uuid
+        self.socket = socket.socket()
+        self.host = host
+        self.port = int(port)
+        self.public_key = public_key
+        self.private_key = private_key
+        self.new_blogs = new_blogs
+        
+        # KEYS AND INFO
+        self.key_dict = key_dict
+        self.info_dict = info_dict
+    
     def run(self):
-        self.server_socket.bind((self.server_host, self.server_port))
-        self.server_socket.listen(5)
+        # Socket Initialisation
+        self.socket.bind((self.host, self.port))
+        self.socket.listen(25)
+        
+        # Accept Connections
         while True:
-            rw_socket, addr = self.server_socket.accept()
-            server = Server(server_uuid=self.server_uuid, rw_socket=rw_socket, server_public=self.server_public, server_private=self.server_private)
+            c, a = self.socket.accept()
+            server = Server(self.uuid, self.host, self.port, c, self.public_key, self.private_key, self.key_dict,
+                            self.info_dict, self.new_blogs)
             server.start()
 
 
