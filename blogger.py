@@ -204,16 +204,10 @@ class Server(threading.Thread):
                     self.socket.send(msg2send.encode())
                     write_on_info_file(info_file, file_header, self.info_dict)
 
-return 'HEL'
+                    return 'HEL'
     
-    self.socket.send('REJ'.encode())
-    return 'REJ'
-
-
-        # RESPONSE - UUID CONTROL
-        if received == 'WHO':
-            self.rw_socket.send(('MID' + ' ' + str(self.m_uuid)).encode())
-            return
+                self.socket.send('REJ'.encode())
+                return 'REJ'
 
         # IF NOT LOGIN - ERROR
         if not self.is_logged:
