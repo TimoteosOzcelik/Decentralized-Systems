@@ -289,10 +289,14 @@ class Server(threading.Thread):
             write_on_info_file(info_file, file_header, self.info_dict)
             self.socket.send('ROK'.encode())
             return 'SUM'
-        # IF NOT LOGIN - ERROR
-        if not self.is_logged:
-            self.rw_socket.send('ERL'.encode())
-            return
+
+        elif self.is_blocked:
+            self.socket.send('BLK'.encode())
+            return 'BLK'
+        
+        elif not self.is_logged:
+            self.socket.send('ERL'.encode())
+            return 'ERL'
 
         # LIST QUERY
         if received == 'LSQ':
