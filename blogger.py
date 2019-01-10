@@ -72,6 +72,28 @@ class Server(threading.Thread):
         # To check, PUB passed
         self.is_public_key_shared = False
         self.blog_dict = {}
+    
+        # To fill blog_dict
+        for file in os.listdir('./BLOGS'):
+            
+            # filename = './BLOGS/' + self.uuid + str(c) + '.txt'
+            f = open('./BLOGS/' + file)
+            blog = f.read()
+            f.close()
+            
+            blogger_uuid = file[0:36]
+                if blogger_uuid == self.uuid:
+                    blogger_nickname = self.name
+            else:
+                blogger_nickname = self.info_dict[blogger_uuid][1]
+                
+                # TODO:
+                # Take blog with its time, It's not correct always
+                t = os.path.getmtime('./BLOGS/' + file)
+                t = str(datetime.datetime.fromtimestamp(t))
+                self.blog_dict[file[36:].split('.')[0]] = [blogger_uuid, blogger_nickname, blog, t]
+
+    # Dict - Key: ID, Value: UUID, Who, Text, When
 
     def run(self):
         while True:
