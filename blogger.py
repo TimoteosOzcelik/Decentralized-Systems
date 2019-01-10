@@ -14,10 +14,6 @@ from Crypto.Hash import SHA256
 import datetime, time
 import queue
 
-index_dict = {}
-key_dict = {}
-
-
 class Connection(threading.Thread):
     def __init__(self, server_uuid, server_host, server_port, server_public, server_private):
         threading.Thread.__init__(self)
