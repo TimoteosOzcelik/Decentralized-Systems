@@ -343,6 +343,35 @@ class Server(threading.Thread):
             
             return 'SMS'
 
+        elif protocol == 'POK' and not message.decode():
+            if self.other_peer_public_key is not None:
+                self.socket.send('POK'.encode())
+        
+            # Public key add to dictionary
+            self.key_dict[self.other_peer_uuid] = self.other_peer_public_key
+            
+            # Record public key to file
+            filename = './KEYS/' + self.other_peer_uuid + '.pub'
+                f = open(filename, 'w')
+                f.write(self.other_peer_public_key.exportKey('PEM').decode())
+                f.close()
+                
+                self.is_public_key_shared = True
+                
+                # self.info_dict[self.other_peer_uuid][5] = 'S'
+                # write_on_info_file(info_file, file_header, self.info_dict)
+                
+                return 'POK'
+            else:
+                self.socket.send('PER'.encode())
+                print('POK - PER')
+                return 'PER'
+
+        elif protocol == 'PER':
+            self.other_peer_public_key = None
+            self.socket.send('PER'.encode())
+            return 'PER'
+
         # DEMAND MICROBLOG
         elif received[0:3] == 'DMB':
             n = int(received[3:].strip())
