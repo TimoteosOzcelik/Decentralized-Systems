@@ -45,18 +45,33 @@ class Listen(threading.Thread):
 class Server(threading.Thread):
     def __init__(self, server_uuid, rw_socket, server_public, server_private):
         threading.Thread.__init__(self)
-        self.m_uuid = server_uuid
-        self.rw_socket = rw_socket
-        self.m_public = server_public # without exportKey
-        self.m_private = server_private # without exportKey
-
+        self.socket = connection
+        self.uuid = str(my_uuid)
+        self.host = host
+        self.port = int(port)
+        self.public_key = public_key
+        self.private_key = private_key
+        self.new_blogs = new_blogs
+        
+        # KEYS AND INFO
+        self.key_dict = key_dict
+        self.info_dict = info_dict
+        
+        # Peer Information to Authentication
+        self.other_peer_uuid = None
+        self.other_peer_public_key = None
+        
+        # Peer Old Connection Information
         self.is_logged = False
-        self.is_subscribed = False
         self.is_blocked = False
-
-        # To encryption need to have client public key
-        self.client_uuid = ''
-        self.client_public = ''
+        self.is_subscribed = False
+        self.is_unsubscribed = False
+        
+        self.subscribed = False
+        
+        # To check, PUB passed
+        self.is_public_key_shared = False
+        self.blog_dict = {}
 
     def run(self):
         while True:
