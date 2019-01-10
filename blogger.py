@@ -134,78 +134,81 @@ class Server(threading.Thread):
             self.socket.send('BYE'.encode())
             self.socket.close()
             return 'BYE'
+
+        info_file = './INFO.txt'
+        file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,CONNECTION_FROM,CONNECTION_TO,TOKEN'
         
-        if self.is_blocked:
-            self.rw_socket.send('BLK'.encode())
+        # INF UUID;NICK;IP;PORT;IS_BLOGGER
+        if protocol == 'WHO' and not message.decode():
+            print('Protokol, WHO', protocol)
+            snd = 'MID ' + self.uuid
+            self.socket.send(snd.encode())
+            return True
 
-        if received[0:3] == 'INF':
-            rest = received[3:].strip()
-            spl = rest.split(';')
-            if len(spl) == 5 and '' not in spl:
-                c_uuid = spl[0]
-                c_nickname = spl[1]
-                c_host = spl[2]
-                c_port = int(spl[3])
-
-                client = Client(client_uuid=c_uuid, client_host=c_host, client_port=c_port)
+        elif protocol == 'INF':
+            messages = message.decode().strip().split(';')
+            
+            if len(messages) == 5 and '' not in messages:
+                is_in_dict = messages[0] in self.info_dict.keys()
+                
+                # Blocked before or not
+                if is_in_dict:
+                    if self.info_dict[messages[0]][5] == 'B':
+                        self.is_blocked = True
+                        self.socket.send('BLK'.encode())
+                        return
+            
+                other_peer_uuid = messages[0]
+                nickname = messages[1]
+                host2connect = messages[2]
+                port2connect = int(messages[3])
+                
+                # TODO: Control client first parameter
+                # Client2Check Identity
+                
+                client = Client(self.uuid, host2connect, port2connect, self.key_dict, self.info_dict)
                 client.connect()
-                check = client.check_identity()
+                uuid_taken = client.check_identity()
                 client.disconnect()
-
-                if check is not 'ERR' and check == c_uuid:
-                    if c_uuid not in index_dict.keys():
-                        # NOT IN DICTIONARY -> ADD EXTENDED SPL
-                        ext = ['', 'L', 'N', time.time(), 'Y']
-                        spl = spl.extend(ext)
-                        index_dict[c_uuid] = spl
-
-                        # WRITING THE UPDATED DICTIONARY
-                        index_file = open('Indexes/index_file.txt', 'w')
-                        file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,CONNECTION_FROM,CONNECTION_TO,TIMESTAMP,IS_ACTIVE'
-                        index_file.write(file_header)
-
-                        for value in index_dict.values():
-                            i = 0
-                            for word in value:
-                                index_file.write(word)
-                                if i != 8:
-                                    index_file.write(",")
-                                i += 1
-                            index_file.write("\n")
-                        index_file.close()
-
-                        # CHECK IS OK, RECORD UUID
-                        self.client_uuid = c_uuid
-
+                
+                # UUID CONTROL
+                if other_peer_uuid != 'ERR' and other_peer_uuid == uuid_taken:
+                    self.other_peer_uuid = uuid_taken
+                    
+                    if is_in_dict:
+                        # Update nickname, ip and port
+                        self.info_dict[other_peer_uuid][1] = nickname
+                        self.info_dict[other_peer_uuid][2] = host2connect
+                        self.info_dict[other_peer_uuid][3] = port2connect
+                        
+                        # Not logged-in before
+                        if self.info_dict[other_peer_uuid][5] == 'N':
+                            self.info_dict[other_peer_uuid][5] = 'L'
+                        
+                        # Inf Protocol means not interaction before
+                        token = str(uuid.uuid4())
+                        self.info_dict[other_peer_uuid][7] = token
+                
+                    # Peer see me in its list, but it's not recorded before in my list
                     else:
-                        lst = index_dict[c_uuid]
-                        # IF BLOCKED
-                        if lst[5] == 'B':
-                            self.is_blocked = True
-                            self.rw_socket.send('BLK'.encode())
-                            return
+                        # Token Creation
+                        token = str(uuid.uuid4())
+                        
+                        # Add to dictionary and write on the file
+                        add_to_dict = ['L', 'N', token]
+                        messages.extend(add_to_dict)
+                        
+                        self.info_dict[uuid_taken] = messages
+                    
+                    msg2send = 'HEL ' + token
+                    self.socket.send(msg2send.encode())
+                    write_on_info_file(info_file, file_header, self.info_dict)
 
-                        # IN DICTIONARY --> UPDATE
-                        lst[1] = c_nickname
-                        lst[2] = c_host
-                        lst[3] = c_port
-                        lst[7] = str(time.time())
-                        lst[8] = 'A'
+return 'HEL'
+    
+    self.socket.send('REJ'.encode())
+    return 'REJ'
 
-                        # IF ALREADY SUBSCRIBED
-                        if lst[5] == 'S':
-                            self.is_subscribed = True
-                        # IF NOT LOGGED-IN
-                        elif lst[5] == 'N':
-                            lst[5] = 'L'
-                        # UPDATE DICTIONARY
-                        index_dict[c_uuid] = lst
-                    # IF HERE, MEAN: NON-BLOCKED - LOGIN ACCEPTED
-                    self.rw_socket.send('HEL'.encode())
-                    self.is_logged = True
-                    return
-                self.rw_socket.send('REJ'.encode())
-            return
 
         # RESPONSE - UUID CONTROL
         if received == 'WHO':
