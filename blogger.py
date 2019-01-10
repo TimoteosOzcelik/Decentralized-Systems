@@ -278,6 +278,17 @@ class Server(threading.Thread):
                     self.socket.send(self.other_peer_public_key.encrypt('TKN'.encode(), 1024)[0])
             return 'BLG'
 
+        elif protocol == 'SBM':
+            self.info_dict[self.other_peer_uuid][6] = 'B'
+            write_on_info_file(info_file, file_header, self.info_dict)
+            self.socket.send('BOK'.encode())
+            return 'SBM'
+        
+        elif protocol == 'SUM':
+            self.info_dict[self.other_peer_uuid][6] = 'N'
+            write_on_info_file(info_file, file_header, self.info_dict)
+            self.socket.send('ROK'.encode())
+            return 'SUM'
         # IF NOT LOGIN - ERROR
         if not self.is_logged:
             self.rw_socket.send('ERL'.encode())
