@@ -443,95 +443,114 @@ class Client(object):
 
     # Request & Response
     def connect(self):
-        self.sock.connect((self.y_host, self.y_port))
-
+        self.socket.connect((self.host2connect, self.port2connect))
+    
     # Request & Response
     def disconnect(self):
-        self.sock.close()
-        self.__del__()
+        request = 'QUI'
+        self.socket.send(request.encode())
+        received = self.socket.recv(2048).decode()
+        if received == 'BYE':
+            self.socket.close()
 
     # Request
     def login(self):
-        req = 'INF'
-        self.sock.send(
-            (req + self.m_uuid + ';' + self.m_host + ';' + self.m_port + ';' + self.is_blogger
-             + ';' + self.nickname).encode())
-        resp = self.sock.recv(1024).decode()
-        self.parser(req, resp)
+        token = self.info_dict[self.other_peer_uuid][7]
+        if token:
+            request = 'LOG'
+                self.socket.send((request + ' ' + self.uuid + ';' + self.nickname + ';' + self.host + ';' + str(self.port) + ';' + token).encode())
+            else:
+                request = 'INF'
+                self.socket.send((request + ' ' + self.uuid + ';' + self.nickname + ';' + self.host + ';' + str(self.port) + ';' + self.is_blogger).encode())
 
-    # Request
-    def demand_peer_list(self):
-        req = 'LSQ'
-        self.sock.send(req.encode())
-        while True:
-            resp = self.sock.recv(1024).decode()
-            if resp == 'END':
-                break
-            self.parser(req, resp)
-
-    # Request & Response
-    def demand_public_key(self):
-        req = 'PUB'
-        self.sock.send(req.encode())
-        resp = self.sock.recv(1024).decode()
-        return self.parser(req, resp)
-
-    # Request & Response
-    def demand_signed_hash(self):
-        req = 'SMS'
-        self.sock.send(req.encode())
-        resp = self.sock.recv(1024).decode()
-        return self.parser(req, resp)
-
-    # Request & Response
-    def demand_public_key_reverse(self):
-        req = 'RPB'
-        self.sock.send(req.encode())
-        resp = self.sock.recv(1024).decode()
-        return self.parser(req, resp)
-
-    # Request & Response
-    def demand_signed_hash_reverse(self):
-        req = 'RSM'
-        self.sock.send(req.encode())
-        resp = self.sock.recv(1024).decode()
-        return self.parser(req, resp)
-    # Request
-    def subscribe(self):
-        req = 'SUB'
-        self.sock.send(self.y_public_key.encrypt(req.encode(), 32).encode())
-        resp = self.sock.recv(1024).decode()
-        self.parser(req, resp)
-
-    # Request
-    def unsubscribe(self):
-        req = 'USB'
-        self.sock.send(self.y_public_key.encrypt(req.encode(), 32).encode())
-        resp = self.sock.recv(1024).decode()
-        self.parser(req, resp)
-
-    # Request
-    def demand_microblog(self, microblog_quantity):
-        # TODO: Microblog from interface
-        req = 'DMB ' + str(microblog_quantity)
-        self.sock.send(self.y_public_key.encrypt(req.encode(), 32).encode())
-        resp = self.sock.recv(1024).decode()
-        self.parser(req, resp)
+        received = self.socket.recv(2048).decode()
+        return self.parser(request, received)
 
     # Response
     def check_identity(self):
-        req = 'WHO'
-        self.sock.send(req.encode())
-        resp = self.sock.recv(1024).decode()
-        return self.parser(req, resp)
-
-    # Request & Response
-    # TODO: Timestamp necessary? IS_ACTIVE column can be used!
-    def check_connection(self):
-        req = 'TIC'
-        self.sock.send(req.encode())
-        resp = self.sock.recv(1024).decode()
-        self.parser(req, resp)
+        request = 'WHO'
+        self.socket.send(request.encode())
+        received = self.socket.recv(2048).decode()
+        return self.parser(request, received)
+    
+    # Request
+    def demand_peer_list(self):
+        request = 'LSA'
+        self.socket.send(request.encode())
+        received = self.socket.recv(2048).decode()
+        return self.parser(request, received)
+    
+    # Request
+    def share_public_key(self):
+        request = 'PUB'
+        self.socket.send('PUB '.encode() + self.public_key.exportKey())
+        print(self.public_key.exportKey())
+        print('PUB '.encode() + self.public_key.exportKey())
+        received = self.socket.recv(2048)
+        self.parser(request, received)
+    
+    # Request
+    def signed_hash_check(self):
+        request = 'SMS'
+        text = 'Hello'
+        hash_text = SHA256.new(text.encode()).digest()
+        self.socket.send('SMS '.encode() + str(self.private_key.sign(hash_text, '')[0]).encode() + ';'.encode() + text.encode())
+        received = self.socket.recv(2048).decode()
+        self.parser(request, received)
+    
+    # Request
+    def send_key_sharing_information(self):
+        if self.other_peer_public_key is not None:
+            print('Client - POK')
+            request = 'POK'
+        
+        else:
+            print('Client - PER')
+            request = 'PER'
+            return 'PER'
+        
+        self.socket.send(request.encode())
+        received = self.socket.recv(2048).decode()
+        return self.parser(request, received)
+    
+    # Request
+    def subscribe(self):
+        request = 'SUB'
+        self.socket.send(self.other_peer_public_key.encrypt(request.encode(), 1024)[0])
+        r = self.socket.recv(2048)
+        received = self.private_key.decrypt((r,)).decode()
+        return self.parser(request, received)
+    
+    # Request
+    def unsubscribe(self):
+        request = 'USB'
+        self.socket.send(self.other_peer_public_key.encrypt(request.encode(), 1024)[0])
+        r = self.socket.recv(2048)
+        received = self.private_key.decrypt((r,)).decode()
+        return self.parser(request, received)
+    
+    # Request
+    def blocked_message(self):
+        request = 'SBM'
+        self.socket.send(request.encode())
+        received = self.socket.recv(2048).decode()
+        return self.parser(request, received)
+    
+    # Request
+    def blocking_removed_message(self):
+        request = 'SUM'
+        self.socket.send(request.encode())
+        received = self.socket.recv(2048).decode()
+        return self.parser(request, received)
+    
+    # Request
+    def publish_new_microblog(self, blog, published_time):
+        request = 'BLG'
+        msg = request + ' ' + str(blog) + ';' + str(published_time)
+        self.socket.send(self.other_peer_public_key.encrypt(msg.encode(), 1024)[0])
+        r = self.socket.recv(2048)
+        received = self.private_key.decrypt((r,)).decode()
+        return self.parser(request, received)
 
     # Request
     def send_message(self, message):
@@ -539,34 +558,6 @@ class Client(object):
         self.sock.send(self.y_public_key.encrypt(req.encode(), 32).encode())
         resp = self.sock.recv(1024).decode()
         self.parser(req, resp)
-
-    # Response
-    def blocked(self):
-        req = 'SBM'
-        self.sock.send(req.encode())
-        resp = self.sock.recv(1024).decode()
-        self.parser(req, resp)
-        # TODO: Block from list
-
-    # Response
-    def unblocked(self):
-        req = 'SUM'
-        self.sock.send(req.encode())
-        resp = self.sock.recv(1024).decode()
-        self.parser(req, resp)
-        # TODO unblock from list
-
-    def publish_microblog(self):
-        # TODO: Add microblog file
-        pass
-
-    def remove_microblog(self):
-        # TODO: Delete microblog file
-        pass
-
-    def quit(self):
-        req = 'QUI'
-        self.sock.send(req.encode())
 
     # Request & Response
     def parser(self, request, received):
