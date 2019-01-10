@@ -371,6 +371,22 @@ class Server(threading.Thread):
             self.other_peer_public_key = None
             self.socket.send('PER'.encode())
             return 'PER'
+        
+        elif protocol == 'SUB' and not message:
+            self.info_dict[self.other_peer_uuid][5] = 'S'
+            write_on_info_file(info_file, file_header, self.info_dict)
+            print(self.other_peer_public_key)
+            self.socket.send(self.other_peer_public_key.encrypt('SOK'.encode(), 1024)[0])
+            return 'SUB'
+        
+        elif protocol == 'USB' and not message:
+            self.info_dict[self.other_peer_uuid][5] = 'U'
+            write_on_info_file(info_file, file_header, self.info_dict)
+            self.socket.send(self.other_peer_public_key.encrypt('UOK'.encode(), 1024)[0])
+            return 'USB'
+        
+        self.socket.send('ERR'.encode())
+        return 'ERR'
 
         # DEMAND MICROBLOG
         elif received[0:3] == 'DMB':
