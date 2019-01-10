@@ -559,127 +559,124 @@ class Client(object):
         resp = self.sock.recv(1024).decode()
         self.parser(req, resp)
 
-    # Request & Response
     def parser(self, request, received):
-        if received == 'BLK':
-            # TODO: Show rejected
+        info_file = './INFO.txt'
+        file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,CONNECTION_FROM,CONNECTION_TO,TIMESTAMP,IS_ACTIVE'
+        
+        if received == 'BLK' or received == 'ERL':
+            return received
+        
+        # LOGIN PROTOCOL
+        if request == 'INF':
+            if received[0:3] == 'HEL':
+                token = received[3:].strip()
+                
+                self.info_dict[self.other_peer_uuid][6] = 'L'
+                self.info_dict[self.other_peer_uuid][7] = token
+                
+                write_on_info_file(info_file, file_header, self.info_dict)
+                return True
             return False
-        elif received == 'ERL':
-            # TODO: Show not login
+        
+        elif request == 'LOG':
+            if received[0:3] == 'HEL':
+                if self.other_peer_uuid in self.key_dict.keys():
+                    self.other_peer_public_key = self.key_dict[self.other_peer_uuid]
+                
+                if self.info_dict[self.other_peer_uuid][6] == 'N':
+                    self.info_dict[self.other_peer_uuid][6] = 'L'
+                    write_on_info_file(info_file, file_header, self.info_dict)
+                return True
             return False
-        elif received == 'ERS' or 'ERK':
-            # TODO: Show not subscribed
-            return False
+        
+        # Check identity
+        elif request == 'WHO':
+            if received[0:3] == 'MID':
+                other_peer_uuid = received[3:].strip()
+                if other_peer_uuid:
+                    return other_peer_uuid
 
-        if request[0:3] == 'INF':
-            if received == 'HEL':
-                # TODO: Add to peer table as connected --> TO
-                return
-            elif received == 'REJ':
-                # TODO: Show rejected
-                return
-
-        elif request == "WHO":
-            if received[0:3] == "MID":
-                rest = received[3:].strip()
-                if not rest:
-                    return rest
-            return 'ERR'
-
-        elif request == "LSQ":
-            if received[0:3] == "LSA":
-                rest = received[3:].strip()
-                # TODO: Show in interface - Update the list
-
+        # Demand Peer List
+        elif request == 'LSQ':
+            if received[0:3] == 'LSA':
+                while received[0:3] == 'LSA':
+                    rest = received[3:].strip()
+                    rest_list = rest.split(';')
+                    if len(rest_list) == 5 and rest_list[0] not in self.info_dict.keys():
+                        rest_list.extend(['N', 'N', ''])
+                        self.info_dict[rest_list[0]] = rest_list
+                        received = self.socket.recv(2048).decode()
+                        return
+    
         elif request == 'PUB':
-            if received[0:3] == "MPK":
-                rest = received[3:].strip()
-                if not rest:
-                    self.y_public_key = rest
-                    # TODO: Add keys file - IFNOT
-                return self.y_public_key
-
-        elif request == 'RPB':
-            if received[0:3] == "MPK":
-                rest = received[3:].strip()
-                if not rest:
-                    self.y_public_key = rest
-                    # TODO: Add keys file - IFNOT
-                return self.y_public_key
-
-        elif request == 'RSM':
-            if received[0:3] == "SYS":
-                rest = received[3:].strip()
-                spl = rest.split(';')
-                if spl.__len__() == 2:
-                    hash = spl[0]
-                    signature = spl[1]
-                    if self.y_public_key.verify(hash, signature):
-                        # TODO: Add to dictionary & Update TYPE
-                        return True
-                    else:
-                        return False
-                else:
-                    return 'ERK'
+            if received[0:3].decode() == 'PUB':
+                self.other_peer_public_key = RSA.importKey(received[3:].strip())
+                return 'PUB'
 
         elif request == 'SMS':
-            if received[0:3] == "SYS":
-                rest = received[3:].strip()
-                spl = rest.split(';')
-                if spl.__len__() == 2:
-                    hash = spl[0]
-                    signature = spl[1]
-                    if self.y_public_key.verify(hash, signature):
-                        # TODO: Add to keyss
-                        return True
-                    else:
-                        return False
-                else:
-                    return 'ERK'
+            msg_split = received[3:].strip().split(';')
+            
+            # TUPLE SIGNATURE
+            signature = int(msg_split[0])
+            signature = (signature, '')
+        
+            text = msg_split[1]
+            hash_text = SHA256.new(text.encode()).digest()
+            
+            try:
+                if not self.other_peer_public_key.verify(hash_text, signature):
+                    self.other_peer_public_key = None
+            except:
+                pass
+        
+        elif request == 'POK' or request == 'PER':
+            if received == 'POK':
+                # Public key add to dictionary
+                self.key_dict[self.other_peer_uuid] = self.other_peer_public_key
+                
+                # Record public key to file
+                filename = './KEYS/' + self.other_peer_uuid + '.pub'
+                f = open(filename, 'w')
+                f.write(self.other_peer_public_key.exportKey('PEM').decode())
+                f.close()
+                
+                # self.info_dict[self.other_peer_uuid][6] = 'S'
+                # write_on_info_file(info_file, file_header, self.info_dict)
+                return 'POK'
+            elif received == 'PER':
+                return 'PER'
 
         elif request == 'SUB':
             if received == 'SOK':
-                # TODO: Update in dictionary & Changes in interface
-                pass
+                self.info_dict[self.other_peer_uuid][6] = 'S'
+                write_on_info_file(info_file, file_header, self.info_dict)
+                return 'SUB'
+        
         elif request == 'USB':
             if received == 'UOK':
-                # TODO: Update in dictionary & Changes in interface
-                pass
+                self.info_dict[self.other_peer_uuid][6] = 'U'
+                write_on_info_file(info_file, file_header, self.info_dict)
+                return 'USB'
+    
+        elif request == 'SBM':
+            # TODO: Karşı taraf kabul etmese de block
+            print('SBM received', received)
+            if received == 'BOK':
+                self.info_dict[self.other_peer_uuid][5] = 'B'
+                write_on_info_file(info_file, file_header, self.info_dict)
+                return 'SBM'
 
-        elif request[0:3] == "DMB":
-            if received[0:3]=="MBM":
-                rest = received[3:].strip()
-                # TODO: Save as txt files with Nickname & UUID & Show in interface
+        elif request == 'SUM':
+            if received == 'ROK':
+                self.info_dict[self.other_peer_uuid][5] = 'N'
+                write_on_info_file(info_file, file_header, self.info_dict)
+                return 'SUM'
+        
+        elif request == 'BLG':
+            if received == 'TKN':
+                return 'BLG'
 
-        elif request == "MSG":
-            if received == "MOK":
-                # TODO: Show "Message Sent" in Interface
-                pass
-            else:
-                # TODO: Show "Message did not reach to its destination" in Interface
-                pass
-
-        elif request == 'TIC':
-            if received == 'TOK':
-                self.error = 0
-            else:
-                self.error += 1
-                if self.error == 3:
-                    # TODO: Set is_active 'N'
-                    pass
-
-
-def get_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        s.connect(('10.255.255.255', 1))
-        ip = s.getsockname()[0]
-    except:
-        ip = '127.0.0.1'
-    finally:
-        s.close()
-    return ip
-
+        return 'ERR'
 
 def main():
     port = 12346
