@@ -1,13 +1,18 @@
+#!/usr/bin/env python3
+
 import threading
 import socket
 import os
 import uuid
 from Crypto.PublicKey import RSA
 from Crypto import Random
+from PyQt5 import QtWidgets, QtCore
+from UI.opening_screen_ui import Ui_OpeningScreen
+from UI.homepage_ui import Ui_HomePage
+from UI.new_microblog_ui import Ui_NewMicroblog
 from Crypto.Hash import SHA256
-import time
+import datetime, time
 import queue
-import logging
 
 index_dict = {}
 key_dict = {}
