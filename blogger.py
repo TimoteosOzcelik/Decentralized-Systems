@@ -678,6 +678,51 @@ class Client(object):
 
         return 'ERR'
 
+# Opening Screen OK
+class OpeningScreen_UI(QtWidgets.QMainWindow):
+    def __init__(self, my_uuid, host, port, public_key, private_key, key_dict, info_dict, new_blogs, parent=None):
+        self.qt_app = QtWidgets.QApplication([])
+        super(OpeningScreen_UI, self).__init__(parent)
+        
+        self.uuid = my_uuid
+        
+        # May be record my info somewhere
+        self.nickname = None
+        
+        self.public_key = public_key
+        self.private_key = private_key
+        
+        self.key_dict = key_dict
+        self.info_dict = info_dict
+        self.host = host
+        self.port = int(port)
+        self.new_blogs = new_blogs
+        
+        # Configure Position
+        qtRectangle = self.frameGeometry()
+        centerPoint = QtWidgets.QDesktopWidget().availableGeometry().center()
+        qtRectangle.moveCenter(centerPoint)
+        self.move(qtRectangle.topLeft())
+        
+        # create the main ui
+        self.ui = Ui_OpeningScreen()
+        self.ui.setupUi(self)
+        self.ui.enter.pressed.connect(self.get_nickname)
+    
+    def get_nickname(self):
+        self.nickname = self.ui.nickname.text()
+        
+        if self.nickname:
+            self.close()
+            
+            homepage_screen = Homepage_UI(self.uuid, self.nickname, self.host, self.port, self.public_key,
+                                          self.private_key, self.key_dict, self.info_dict, self.new_blogs, parent=self)
+            homepage_screen.run()
+
+    def run(self):
+        self.show()
+        self.qt_app.exec_()
+
 def main():
     port = 12346
 
