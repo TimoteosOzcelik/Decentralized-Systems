@@ -1112,6 +1112,20 @@ class NewMicroBlog_UI(QtWidgets.QDialog):
     def run(self):
         self.show()
 
+    def write_on_info_file(info_file, file_header, info_dict):
+        index_file = open(info_file, 'w')
+        index_file.write(file_header + '\n')
+        
+        for value in info_dict.values():
+            i = 0
+            for word in value:
+                index_file.write(str(word))
+                if i != 7:
+                    index_file.write(",")
+                i += 1
+            index_file.write("\n")
+        index_file.close()
+
 
 def main():
     port = 12346
