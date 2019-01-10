@@ -723,6 +723,329 @@ class OpeningScreen_UI(QtWidgets.QMainWindow):
         self.show()
         self.qt_app.exec_()
 
+class Homepage_UI(QtWidgets.QMainWindow):
+    def __init__(self, my_uuid, nick, host, port, public_key, private_key, key_dict, info_dict, new_blogs, parent=None):
+        QtWidgets.QMainWindow.__init__(self, parent)
+        
+        # Shape Configuration
+        qtRectangle = self.frameGeometry()
+        centerPoint = QtWidgets.QDesktopWidget().availableGeometry().center()
+        centerPoint.setX(centerPoint.x() - self.width())
+        centerPoint.setY(centerPoint.y() - self.height())
+        qtRectangle.moveCenter(centerPoint)
+        self.move(qtRectangle.topLeft())
+        
+        # create the main ui
+        self.ui = Ui_HomePage()
+        self.ui.setupUi(self)
+        
+        # Peer Information
+        self.uuid = my_uuid
+        self.nickname = nick
+        self.public_key = public_key
+        self.private_key = private_key
+        self.key_dict = key_dict
+        self.info_dict = info_dict
+        self.host = str(host)
+        self.port = int(port)
+        self.new_blogs = new_blogs
+        
+        self.ui.id_label.setText('ID: ' + str(my_uuid))
+        self.ui.nickname_label.setText('Kullanıcı Adı: ' + str(nick))
+        
+        # Refresh list
+        self.timer2refresh_list = QtCore.QTimer()
+        self.timer2refresh_list.timeout.connect(self.refresh_list)
+        self.timer2refresh_list.start(5000)
+        
+        self.timer2pull_new_blogs = QtCore.QTimer()
+        self.timer2pull_new_blogs.timeout.connect(self.pull_new_blogs)
+        self.timer2pull_new_blogs.start(30000)
+        
+        self.timer2demand_list = QtCore.QTimer()
+        self.timer2demand_list.timeout.connect(self.demand_list_from_negotiator)
+        self.timer2demand_list.start(60000)
+        
+        # self.ui.tabWidget.currentChanged.connect(self.send_message)
+        self.ui.login.clicked.connect(self.login)
+        self.ui.blogger_list.currentTextChanged.connect(self.button_settings)
+        self.ui.new_blog.clicked.connect(self.create_new_blog)
+        self.ui.block.clicked.connect(self.block)
+        self.ui.subscribe.clicked.connect(self.subscribe)
+        self.ui.exit.clicked.connect(self.exit)
+        
+        self.ui.listWidget.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
+        self.ui.listWidget.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
+        
+        # START TO ACCEPT CONNECTIONS
+        listen = Listen(self.uuid, self.host, self.port, self.public_key, self.private_key, self.key_dict, self.info_dict,
+                        self.new_blogs)
+                        listen.start()
+                        
+                        self.refresh_list()
+                        self.button_settings()
+                        
+                        self.blog_dict = {}
+                        for file in os.listdir('./BLOGS'):
+                            f = open('./BLOGS/' + file)
+                            blog = f.read()
+                            f.close()
+                            
+                            blogger_uuid = file[0:36]
+                            if blogger_uuid == self.uuid:
+                                blogger_nickname = self.nickname
+                                    else:
+                                        blogger_nickname = self.info_dict[blogger_uuid][1]
+                                            
+                                            self.add_blog(blogger_nickname + ' : ' + blogger_uuid + ' : ' + blog)
+                                            
+                                            t = os.path.getmtime('./BLOGS/' + file)
+                                            t = str(datetime.datetime.fromtimestamp(t))
+                                                self.blog_dict[file[36:].split('.')[0]] = [blogger_uuid, blogger_nickname, blog, t]
+
+    def pull_new_blogs(self):
+        while not self.new_blogs.empty():
+            gets = self.new_blogs.get().split(';')
+            blog = gets[1]
+            other_peer_uuid = gets[0]
+            nickname = self.info_dict[other_peer_uuid][1]
+            text = nickname + ':' + other_peer_uuid + blog
+                self.add_blog(text)
+
+    def button_settings(self):
+        if self.ui.blogger_list.currentIndex() != -1:
+            uuid_ = self.ui.blogger_list.currentText().split(';')[1].strip()
+            if self.info_dict[uuid_][6] == 'N':
+                self.ui.login.setDisabled(False)
+                self.ui.request_list.setDisabled(True)
+                self.ui.subscribe.setText('Takip Et')
+                self.ui.subscribe.setDisabled(True)
+            else:
+                self.ui.login.setDisabled(True)
+                self.ui.request_list.setDisabled(False)
+                self.ui.subscribe.setDisabled(False)
+        
+            self.ui.block.setDisabled(False)
+            
+            if self.info_dict[uuid_][6] == 'S':
+                self.ui.subscribe.setText('Takibi Kes')
+    
+            elif self.info_dict[uuid_][6] == 'U':
+                self.ui.subscribe.setText('Takip Et')
+            
+            elif self.info_dict[uuid_][6] == 'B':
+                self.ui.subscribe.setDisabled(True)
+                self.ui.request_list.setDisabled(True)
+            
+            if self.info_dict[uuid_][5] == 'B':
+                self.ui.block.setText('Blok Kaldır')
+            else:
+                self.ui.block.setText('Blokla')
+        else:
+            self.ui.login.setDisabled(True)
+            self.ui.subscribe.setDisabled(True)
+            self.ui.request_list.setDisabled(True)
+            self.ui.block.setDisabled(True)
+
+    def refresh_list(self):
+        print('Tried to refresh list')
+        print(self.info_dict)
+        
+        active_bloggers = []
+        
+        for u in self.info_dict.keys():
+            
+            # If it's blogger
+            if self.info_dict[u][4] == 'Y':
+                host2connect = self.info_dict[u][2]
+                port2connect = int(self.info_dict[u][3])
+                
+                try:
+                    # Check connection
+                    client = Client(self.uuid, host2connect, port2connect)
+                    # Print connect
+                    client.connect()
+                    active_bloggers.append(str(self.info_dict[u][1]) + ' ; ' + str(u))
+                    client.disconnect()
+                except:
+                    pass
+        # TODO: Logger...
+
+        self.ui.blogger_list.clear()
+        self.ui.blogger_list.addItems(active_bloggers)
+
+    # TODO: Hata durumları
+    def demand_list_from_negotiator(self):
+        
+        for u in self.info_dict.keys():
+            # If it's not blogger
+            if self.info_dict[u][4] == 'N':
+                host2connect = self.info_dict[u][2]
+                port2connect = int(self.info_dict[u][3])
+                try:
+                    client = Client(self.uuid, host2connect, port2connect, host=self.host, port=self.port,
+                                    info_dict=self.info_dict)
+                                    client.connect()
+                                        client.login()
+                                        
+                                        self.button_settings()
+                                        
+                                        client.demand_peer_list()
+                                            client.disconnect()
+                finally:
+                    self.refresh_list()
+
+    # TODO: Hata durumları
+    def login(self):
+        # Need for client
+        other_peer_uuid = self.ui.blogger_list.currentText().split(';')[1].strip()
+        host2connect = self.info_dict[other_peer_uuid][2]
+        port2connect = int(self.info_dict[other_peer_uuid][3])
+    
+        try:
+            client = Client(self.uuid, host2connect, port2connect, nickname=self.nickname, host=self.host, port=self.port,
+                            other_peer_uuid=other_peer_uuid, info_dict=self.info_dict, key_dict=self.key_dict)
+                            client.connect()
+                                client.login()
+                                client.disconnect()
+        except:
+            QtWidgets.QMessageBox.about(self, "Hata", "Listede Kimse Yok")
+
+    # TODO: Hata durumları
+    def demand_list_from_blogger(self):
+        # Other peer uuid to request
+        other_peer_uuid = self.ui.blogger_list.currentText().split(';')[1].strip()
+        host2connect = self.info_dict[other_peer_uuid][2]
+        port2connect = int(self.info_dict[other_peer_uuid][3])
+    
+        try:
+            client = Client(self.uuid, host2connect, port2connect, nickname=self.nickname, host=self.host, port=self.port,
+                            other_peer_uuid=other_peer_uuid, info_dict=self.info_dict, key_dict=self.key_dict)
+                            client.connect()
+                                client.login()
+                                client.demand_peer_list()
+                                self.refresh_list()
+                                client.disconnect()
+        except:
+            # QtWidgets.QMessageBox.about(self, "Hata", "Listede Kimse Yok")
+            pass
+
+    def create_new_blog(self):
+        new_micro = NewMicroBlog_UI(self.uuid, self.nickname, self.public_key, self.private_key, self.key_dict, self.info_dict,
+                                    self.host, self.port, self.blog_dict, self.ui.blogger_list, parent=self)
+                                    new_micro.setModal(True)
+                                        new_micro.show()
+
+    def subscribe(self):
+        if self.ui.subscribe.text() == 'Takibi Kes':
+            self.unsubscribe()
+            else:
+                # Other peer uuid to request
+                other_peer_uuid = self.ui.blogger_list.currentText().split(';')[1].strip()
+                host2connect = self.info_dict[other_peer_uuid][2]
+                port2connect = int(self.info_dict[other_peer_uuid][3])
+                if other_peer_uuid in self.key_dict.keys():
+                    other_peer_public_key = self.key_dict[other_peer_uuid]
+                else:
+                    other_peer_public_key = None
+            
+                try:
+                    client = Client(self.uuid, host2connect, port2connect, nickname=self.nickname, host=self.host, port=self.port,
+                                    other_peer_uuid=other_peer_uuid, info_dict=self.info_dict, key_dict=self.key_dict,
+                                    public_key=self.public_key, private_key=self.private_key)
+                                    client.connect()
+                                    # If subscribe selection is able to choose, means: Token shared
+                                    client.login()
+                                    print(other_peer_public_key)
+                                    if other_peer_public_key is not None:
+                                        time.sleep(0.25)
+                                        client.subscribe()
+                                    else:
+                                        client.share_public_key()
+                                        time.sleep(0.25)
+                                        client.signed_hash_check()
+                                        time.sleep(0.25)
+                                        if client.send_key_sharing_information() == 'POK':
+                                            time.sleep(0.25)
+                                            client.subscribe()
+                                                
+                                                self.button_settings()
+                                                client.disconnect()
+                except:
+                    pass
+
+    def block(self):
+        if self.ui.block.text() == 'Blok Kaldır':
+            self.unblock()
+            else:
+                # Other peer uuid to request
+                other_peer_uuid = self.ui.blogger_list.currentText().split(';')[1].strip()
+                host2connect = self.info_dict[other_peer_uuid][2]
+                port2connect = int(self.info_dict[other_peer_uuid][3])
+                
+                try:
+                    client = Client(self.uuid, host2connect, port2connect, nickname=self.nickname, host=self.host, port=self.port,
+                                    other_peer_uuid=other_peer_uuid, info_dict=self.info_dict, key_dict=self.key_dict,
+                                    public_key=self.public_key, private_key=self.private_key)
+                                    client.connect()
+                                    
+                                    # If subscribe selection is able to choose, means: Token shared
+                                    client.login()
+                                    time.sleep(0.25)
+                                    client.blocked_message()
+                                    self.button_settings()
+                                    client.disconnect()
+                except:
+                    pass
+
+    def unblock(self):
+        # Other peer uuid to request
+        other_peer_uuid = self.ui.blogger_list.currentText().split(';')[1].strip()
+        host2connect = self.info_dict[other_peer_uuid][2]
+        port2connect = int(self.info_dict[other_peer_uuid][3])
+        
+        try:
+            client = Client(self.uuid, host2connect, port2connect, nickname=self.nickname, host=self.host, port=self.port,
+                            other_peer_uuid=other_peer_uuid, info_dict=self.info_dict, key_dict=self.key_dict,
+                            public_key=self.public_key, private_key=self.private_key)
+                            client.connect()
+                                
+                                # If subscribe selection is able to choose, means: Token shared
+                                client.login()
+                                time.sleep(0.25)
+                                client.blocking_removed_message()
+                                self.button_settings()
+                                client.disconnect()
+        except:
+            pass
+
+    def add_blog(self, text):
+        item = QtWidgets.QListWidgetItem(text)
+        items = item.text().split(':')
+        item_header = items[0] + ':' + items[1] + '\n'
+        items = items[2:]
+        item_text = ''
+            for i in items:
+                item_text += i + ':'
+        item_text = item_text[:-1]
+            line = ''
+            text = ''
+            for word in item_text.split():
+                line += word + ' '
+                text += word + ' '
+                if len(line) > 48:
+                    text += '\n'
+                    line = ''
+
+        item_text = item_header + text
+        self.ui.listWidget.insertItem(0, item_text)
+    
+    def exit(self):
+        self.close()
+    
+    def run(self):
+        self.show()
+
 def main():
     port = 12346
 
