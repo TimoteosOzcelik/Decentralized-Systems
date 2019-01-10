@@ -298,18 +298,22 @@ class Server(threading.Thread):
             self.socket.send('ERL'.encode())
             return 'ERL'
 
-        # LIST QUERY
-        if received == 'LSQ':
-            for k in index_dict.keys():
-                spl = index_dict[k]
-                snd = ''
-                for i in spl[1:5]:
-                    snd += str(i) + ';'
-                snd = snd[:-1]
-                self.rw_socket.send(snd.encode())
-                time.sleep(0.25)
-            self.rw_socket.send('END'.encode())
-            return
+        # List query received
+        elif protocol == 'LSQ' and not message.decode():
+            for key in self.info_dict.keys():
+                snd2message = ''
+                for s in self.info_dict[key][0:5]:
+                    snd2message += str(s) + ';'
+                    
+                    snd2message = snd2message[:-1]
+                    
+                    snd2message = 'LSA ' + snd2message
+                    
+                    self.socket.send(snd2message.encode())
+                    time.sleep(0.5)
+            # To say list is ended
+            self.socket.send('END'.encode())
+            return 'END'
 
         # DEMAND PUBLIC KEY
         elif received == 'PUB':
