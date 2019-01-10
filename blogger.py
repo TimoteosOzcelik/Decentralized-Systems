@@ -1046,6 +1046,73 @@ class Homepage_UI(QtWidgets.QMainWindow):
     def run(self):
         self.show()
 
+class NewMicroBlog_UI(QtWidgets.QDialog):
+    def __init__(self, uuid_, nick, public_key, private_key, key_dict, info_dict, host, port, blog_dict, parent_combo_box, parent):
+        super(NewMicroBlog_UI, self).__init__(parent)
+        self.parent = parent
+        self.parent_combo_box = parent_combo_box
+        
+        # create the main ui
+        self.ui = Ui_NewMicroblog()
+        self.ui.setupUi(self)
+        
+        self.uuid = uuid_
+        self.nickname = nick
+        self.public_key = public_key
+        self.private_key = private_key
+        self.key_dict = key_dict
+        self.info_dict = info_dict
+        self.blog_dict = blog_dict
+        self.host = host
+        self.port = port
+        
+        self.ui.yayinla.clicked.connect(self.publish_microblog)
+    
+    def publish_microblog(self):
+        # Save my blogs - Write on the file
+        blog = self.ui.blog.toPlainText()
+        
+        c = 0
+        for k in self.blog_dict.keys():
+            if self.blog_dict[k][0] == self.uuid:
+                c += 1
+        
+        filename = './BLOGS/' + self.uuid + str(c) + '.txt'
+        f = open(filename, 'w')
+        
+        f.write(blog)
+        f.close()
+        
+        t = os.path.getmtime(filename)
+        t = str(datetime.datetime.fromtimestamp(t))
+        
+        self.parent.add_blog(self.nickname + ' : ' + self.uuid + ' : ' + blog)
+        
+        AllItems = [self.parent_combo_box.itemText(i) for i in range(self.parent_combo_box.count())]
+        for items in AllItems:
+            other_peer_uuid = items.split(';')[1].strip()
+            if self.info_dict[other_peer_uuid][5] == 'S':
+                try:
+                    host2connect = self.info_dict[other_peer_uuid][2]
+                    port2connect = self.info_dict[other_peer_uuid][3]
+                    client = Client(self.uuid, host2connect, port2connect, nickname=self.nickname, host=self.host, port=self.port,
+                                    other_peer_uuid=other_peer_uuid, info_dict=self.info_dict, key_dict=self.key_dict,
+                                    public_key=self.public_key, private_key=self.private_key)
+                                    client.connect()
+                                    client.login()
+                                    time.sleep(0.25)
+                                    
+                                    client.publish_new_microblog(blog, t)
+                                    time.sleep(0.25)
+                                    client.disconnect()
+                except:
+                    pass
+                self.close()
+
+    def run(self):
+        self.show()
+
+
 def main():
     port = 12346
 
