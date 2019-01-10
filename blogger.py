@@ -129,6 +129,12 @@ class Server(threading.Thread):
                 break
 
     def parser(self, received):
+        if protocol == 'QUI' and not message.decode():
+            print('Protokol, QUI', protocol)
+            self.socket.send('BYE'.encode())
+            self.socket.close()
+            return 'BYE'
+        
         if self.is_blocked:
             self.rw_socket.send('BLK'.encode())
 
