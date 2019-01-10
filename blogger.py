@@ -315,39 +315,33 @@ class Server(threading.Thread):
             self.socket.send('END'.encode())
             return 'END'
 
-        # DEMAND PUBLIC KEY
-        elif received == 'PUB':
-            lst = index_dict[self.client_uuid]
-            host = lst[1]
-            port = int(lst[2])
-
-            client = Client(client_uuid=self.client_uuid, client_host=host, client_port=port)
-            client.connect()
-            pk = client.demand_public_key_reverse()
-            if client.demand_signed_hash_reverse():
-                self.client_public = pk
-                # TODO: Add keys file
-            client.disconnect()
-
-            self.rw_socket.send('MPK '.encode() + self.m_public.exportKey())
-            return
-
-                # DEMANDED PUBLIC KEY
-        elif received == 'RPB':
-            self.rw_socket.send('MPK '.encode() + self.m_public.exportKey())
-            return
-
-        # DEMANDED SIGNED HASH
-        elif received == 'RSM':
-            hash = SHA256.new('abcdefgh'.encode()).digest()
-            self.rw_socket.send('SYS '.encode() + str(self.m_private.sign(hash, '')[0]).encode())
-            return
-
-        # DEMAND SIGNED HASH
-        elif received == 'SMS':
-            hash = SHA256.new('abcdefgh'.encode()).digest()
-            self.rw_socket.send('SYS '.encode() + str(self.m_private.sign(hash, '')[0]).encode())
-            return
+        elif protocol == 'PUB':
+            self.other_peer_public_key = RSA.importKey(message[1:])
+            self.socket.send('PUB '.encode() + self.public_key.exportKey())
+            return 'PUB'
+        
+        elif protocol == 'SMS':
+            text = 'Hello'
+            hash_text = SHA256.new(text.encode()).digest()
+            self.socket.send('SMS '.encode() + str(self.private_key.sign(hash_text, '')[0]).encode() + ';'.encode() + text.encode())
+            
+            msg_split = message.decode().strip().split(';')
+            print(msg_split)
+            
+            # TUPLE SIGNATURE
+            signature = int(msg_split[0])
+            signature = (signature, '')
+            
+            text = msg_split[1]
+            hash_text = SHA256.new(text.encode()).digest()
+            
+            try:
+                if not self.other_peer_public_key.verify(hash_text, signature):
+                    self.other_peer_public_key = None
+            except:
+                pass
+            
+            return 'SMS'
 
         # DEMAND MICROBLOG
         elif received[0:3] == 'DMB':
