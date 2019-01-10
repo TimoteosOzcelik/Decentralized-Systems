@@ -407,33 +407,36 @@ class Server(threading.Thread):
 
 
 class Client(object):
-    def __init__(self,  client_uuid, client_host, client_port, server_uuid=None, server_host=None, server_port=None, server_private=None):
+    def __init__(self, my_uuid, host2connect, port2connect,  key_dict=None, info_dict=None, public_key=None, private_key=None,
+                 nickname=None, host=None, port=None, other_peer_uuid=None):
         # Blogger
         self.is_blogger = 'Y'
-
-        # Its server information to share
-        self.m_uuid = server_uuid  # Request - For login protocol
-        self.m_host = server_host  # Request - For login protocol
-        self.m_port = server_port  # Request - For login protocol
-        self.m_private = server_private  # Request & Response - For decryption
-
-        # TODO: Get nickname from interface
-        self.nickname = ''
-
-        # Other side server information to connect & check
-        self.y_host = client_host  # Response - To connect
-        self.y_port = client_port  # Response - To connect
-        self.y_uuid = client_uuid  # Response - To connect & check UUID
-        self.y_public_key = ''  # Response - To check public_key
-
-        # Socket
-        self.sock = socket.socket()
-
-        # False response count
-        self.error = 0
-
-    def __del__(self):
-        pass
+        self.socket = socket.socket()
+        
+        # My Peer Information
+        self.uuid = my_uuid
+        self.host = host
+        
+        try:
+            self.port = int(port)
+        except:
+            self.port = None
+        
+        # KEYS AND INFO
+        self.key_dict = key_dict
+        self.info_dict = info_dict
+        
+        self.nickname = nickname
+        self.public_key = public_key
+        self.private_key = private_key
+        
+        # TO CONNECT
+        self.host2connect = str(host2connect)
+        self.port2connect = int(port2connect)
+        
+        # Other Peer Information to Authentication
+        self.other_peer_uuid = other_peer_uuid
+                self.other_peer_public_key = None
 
     def run(self):
         pass
