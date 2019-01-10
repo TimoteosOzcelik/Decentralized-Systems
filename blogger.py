@@ -259,6 +259,25 @@ class Server(threading.Thread):
             self.socket.send('REJ'.encode())
             return 'REJ'
 
+        if self.subscribed and protocol == 'BLG':
+            messages = message.strip().split(';')
+            blog = messages[0]
+            timestamp = messages[1]
+            c = 0
+            for k in self.blog_dict.keys():
+                if self.blog_dict[k][0] == self.other_peer_uuid:
+                    c += 1
+                    
+                    filename = './BLOGS/' + self.uuid + str(c) + '.txt'
+                    f = open(filename, 'w')
+                    
+                    f.write(blog)
+                    f.close()
+                    
+                    self.new_blogs.put(self.other_peer_uuid + ';' + blog)
+                    self.socket.send(self.other_peer_public_key.encrypt('TKN'.encode(), 1024)[0])
+            return 'BLG'
+
         # IF NOT LOGIN - ERROR
         if not self.is_logged:
             self.rw_socket.send('ERL'.encode())
