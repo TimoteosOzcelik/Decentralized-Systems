@@ -209,6 +209,56 @@ class Server(threading.Thread):
                 self.socket.send('REJ'.encode())
                 return 'REJ'
 
+        # INTERACTION BEFORE, LOGIN P2P
+        elif protocol == 'LOG':
+            messages = message.decode().strip().split(';')
+
+            if len(messages) == 5 and '' not in messages:
+                if messages[0] in self.info_dict.keys():
+                    
+                    # BLOCKED BEFORE OR NOT
+                    self.other_peer_uuid = str(messages[0])
+                    self.info_dict[self.other_peer_uuid][1] = messages[1]
+                    self.info_dict[self.other_peer_uuid][2] = messages[2]
+                    self.info_dict[self.other_peer_uuid][3] = messages[3]
+
+                    if self.info_dict[self.other_peer_uuid][5] == 'B':
+                            self.is_blocked = True
+    
+                    if self.info_dict[self.other_peer_uuid][7] == messages[4]:
+                        # Not logged before or blocked & unblocked
+                        if self.info_dict[self.other_peer_uuid][5] == 'N':
+                            self.info_dict[self.other_peer_uuid][5] = 'L'
+                            self.is_logged = True
+                                
+                        # Already logged before
+                        elif self.info_dict[self.other_peer_uuid][5] == 'L':
+                            self.is_logged = True
+                        
+                        # Already subscribed before
+                        elif self.info_dict[self.other_peer_uuid][5] == 'S':
+                            self.is_logged = True
+                            self.is_subscribed = True
+                        
+                        # Already subscribed & unsubscribed me
+                        elif self.info_dict[self.other_peer_uuid][5] == 'U':
+                            self.is_logged = True
+                            self.is_unsubscribed = True
+                        
+                        if self.info_dict[self.other_peer_uuid][6] == 'S':
+                            self.subscribed = True
+                        
+                        if os.path.exists('./KEYS/' + self.other_peer_uuid + '.pub'):
+                            self.other_peer_public_key = self.key_dict[self.other_peer_uuid]
+                            self.is_public_key_shared = True
+                        
+                        write_on_info_file(info_file, file_header, self.info_dict)
+                        snd = 'HEL ' + messages[4]
+                        self.socket.send(snd.encode())
+                        return 'HEL'
+            self.socket.send('REJ'.encode())
+            return 'REJ'
+
         # IF NOT LOGIN - ERROR
         if not self.is_logged:
             self.rw_socket.send('ERL'.encode())
