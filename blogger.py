@@ -97,24 +97,36 @@ class Server(threading.Thread):
 
     def run(self):
         while True:
-            if not self.is_subscribed:
-                msg = self.rw_socket.recv(1024).decode()
-                if msg == 'QUI':
-                    break
-                self.parser(msg)
-            else:
-                rec = self.rw_socket.recv(1024)
-                msg = rec.decode()
-
-                # SUBSCRIBE BUT NON-ENCRYPTED PROTOCOL MESSAGES
-                if msg[0:3] == 'LSQ' or msg[0:3] == 'INF':
-                    if msg == 'QUI':
-                        break
-                    self.parser(msg)
-                # SUBSCRIBE AND ENCRYPTED PROTOCOL MESSAGES
-                else:
-                    msg = self.m_private.decrypt(rec).decode()
-                    self.parser(msg)
+            if self.is_public_key_shared:
+                received = self.socket.recv(2048)
+                
+                # If public_key shared before but not sent encrypted message
+                try:
+                    non_encrypted = received
+                    protocol = non_encrypted[0:3].decode()
+                    message = non_encrypted[3:]
+                    
+                    # Public key shared but not encrypted message
+                    if protocol in ['LSQ', 'SBM', 'SUM', 'QUI']:
+                        if self.parser(protocol, message) == 'BYE':
+                            break
+                except:
+                    print('Received', received)
+                    r = (received, )
+                    decrypted = self.private_key.decrypt(r).decode()
+                    print(decrypted)
+                    protocol = decrypted[0:3]
+                    message = decrypted[3:]
+                    self.parser(protocol, message)
+        else:
+            # Receive before public key shared
+            received = self.socket.recv(2048)
+            protocol = received[0:3].decode()
+            message = received[3:]
+            
+            # SEND IN PARSER
+            if self.parser(protocol, message) == 'BYE':
+                break
 
     def parser(self, received):
         if self.is_blocked:
