@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>HomePage</class>
+ <widget class="QMainWindow" name="HomePage">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1322</width>
+    <height>1090</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Uygulama Ekranı</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QLabel" name="kullanici_bilgileri">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>20</y>
+      <width>1121</width>
+      <height>34</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Kullanıcı Bilgileri</string>
+    </property>
+   </widget>
+   <widget class="QTabWidget" name="tabWidget">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>160</y>
+      <width>1291</width>
+      <height>771</height>
+     </rect>
+    </property>
+    <property name="currentIndex">
+     <number>0</number>
+    </property>
+    <widget class="QWidget" name="homepage_tab">
+     <attribute name="title">
+      <string>Anasayfa</string>
+     </attribute>
+     <widget class="QPushButton" name="subscribe">
+      <property name="geometry">
+       <rect>
+        <x>1130</x>
+        <y>130</y>
+        <width>151</width>
+        <height>44</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Takip Et</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="users">
+      <property name="geometry">
+       <rect>
+        <x>660</x>
+        <y>20</y>
+        <width>181</width>
+        <height>34</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Kullanıcılar :</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="login">
+      <property name="geometry">
+       <rect>
+        <x>1130</x>
+        <y>70</y>
+        <width>151</width>
+        <height>44</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Bağlan</string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="blogger_list">
+      <property name="geometry">
+       <rect>
+        <x>840</x>
+        <y>10</y>
+        <width>441</width>
+        <height>44</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="request_list">
+      <property name="geometry">
+       <rect>
+        <x>1130</x>
+        <y>190</y>
+        <width>151</width>
+        <height>44</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Liste İste</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="new_blog">
+      <property name="geometry">
+       <rect>
+        <x>1130</x>
+        <y>660</y>
+        <width>151</width>
+        <height>44</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Yeni Blog</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="block">
+      <property name="geometry">
+       <rect>
+        <x>1130</x>
+        <y>250</y>
+        <width>151</width>
+        <height>44</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Blokla</string>
+      </property>
+     </widget>
+     <widget class="QListWidget" name="listWidget">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>631</width>
+        <height>691</height>
+       </rect>
+      </property>
+      <property name="palette">
+       <palette>
+        <active>
+         <colorrole role="Base">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>223</red>
+            <green>223</green>
+            <blue>223</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </active>
+        <inactive>
+         <colorrole role="Base">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>223</red>
+            <green>223</green>
+            <blue>223</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </inactive>
+        <disabled>
+         <colorrole role="Base">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>255</red>
+            <green>255</green>
+            <blue>255</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </disabled>
+       </palette>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="message_tab">
+     <attribute name="title">
+      <string>Mesajlar</string>
+     </attribute>
+     <widget class="QWidget" name="messages_widget" native="true">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>70</y>
+        <width>1261</width>
+        <height>631</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="kullanici_bilgileri_2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>20</y>
+        <width>211</width>
+        <height>34</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Direkt Mesajlar</string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="blogger_list_messages">
+      <property name="geometry">
+       <rect>
+        <x>840</x>
+        <y>10</y>
+        <width>441</width>
+        <height>44</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="users_2">
+      <property name="geometry">
+       <rect>
+        <x>660</x>
+        <y>20</y>
+        <width>181</width>
+        <height>34</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Kullanıcılar :</string>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+   <widget class="QPushButton" name="exit">
+    <property name="geometry">
+     <rect>
+      <x>1150</x>
+      <y>950</y>
+      <width>151</width>
+      <height>44</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Çıkış</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="id_label">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>60</y>
+      <width>1111</width>
+      <height>34</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>ID :</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="nickname_label">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>100</y>
+      <width>1121</width>
+      <height>34</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Kullanıcı Adı :</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1322</width>
+     <height>42</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

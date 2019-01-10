@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>NewMicroblog</class>
+ <widget class="QDialog" name="NewMicroblog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>613</width>
+    <height>351</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Yeni Blog Yayınla</string>
+  </property>
+  <widget class="QPushButton" name="yayinla">
+   <property name="geometry">
+    <rect>
+     <x>230</x>
+     <y>280</y>
+     <width>151</width>
+     <height>44</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Yayınla</string>
+   </property>
+  </widget>
+  <widget class="QPlainTextEdit" name="blog">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>30</y>
+     <width>521</width>
+     <height>241</height>
+    </rect>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
