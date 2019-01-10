@@ -147,9 +147,59 @@ def write_on_info_file(info_file, file_header, info_dict):
     index_file.close()
 
 
+class Client(object):
+    def __init__(self,uuid, ip, port, info_dict):
+        self.uuid=uuid
+        self.ip=ip
+        self.port=port
+        self.info_dict=info_dict
+        self.s = socket.socket()
+    def connect(self):
+        self.s.connect((self.ip,self.port))
+    def disconnect(self):
+        self.s.send('QUI'.encode())
+        if self.s.recv(1024).decode()=='BYE':
+            self.s.close()
+    def check_identity(self):
+        self.s.send('WHO'.encode())
+        cevap = self.s.recv(1024).decode()
+        if cevap[:3] == 'MID':
+            uuid_=cevap[3:].strip()
+            if uuid_ :
+                return uuid_
+        return 'ERR'
 
 def main():
+    negotiator_port=12654
+    negotiator_host='127.0.0.1'
+    info_file='./INFO.txt'
+    info_dict={}
 
+    if os.path.isfile('uuid'):
+        negotiator_uuid=str(uuid.UUID(open('uuid','r').read()))
+    else:
+        negotiator_uuid=str(uuid.uuid4())
+        f=open('uuid','w')
+        f.write(negotiator_uuid)
+        f.close()
+        # INFO FILE OPERATIONS
+        try:
+            index_file = open(info_file)
+            file_header = index_file.readline().strip('\n')
+            data = index_file.readlines()
+
+            # Copies available information to a dictionary
+            for line in data:
+                print(line)
+                if line:
+                    words = line.rstrip('\n').split(",")
+                    info_dict[words[0]] = words
+            index_file.close()
+        except:
+            pass
+
+        connection = threadConnexion(negotiator_uuid, negotiator_host, negotiator_port, info_dict)
+        connection.start()
 
 if __name__ == "__main__":
         main()
