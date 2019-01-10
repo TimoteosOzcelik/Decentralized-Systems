@@ -1128,69 +1128,96 @@ class NewMicroBlog_UI(QtWidgets.QDialog):
 
 
 def main():
-    port = 12346
-
+    # PORT
+    blogger_port = 12372
+    
+    # HOST
+    blogger_host = '127.0.0.1'
+    
+    # KEYS INFO
+    keys_path = './KEYS'
+    key_dict = {}
+    
+    # INFORMATION PATH
+    info_file = './INFO.txt'
+    info_dict = {}
+    
+    # BLOGS INFO
+    blog_path = './BLOGS'
+    
+    # Automatically Private & Public Key and UUID
     exists_pem = os.path.isfile('id_rsa.pem')
     exists_pub = os.path.isfile('id_rsa.pub')
-    exists_uuid = os.path.isfile('uuid.pem')
+    exists_uuid = os.path.isfile('uuid')
     if exists_pem and exists_pub and exists_uuid:
-        blogger_public_key = RSA.importKey(open('id_rsa.pem', 'rb').read())
-        blogger_private_key = RSA.importKey(open('id_rsa.pub', 'rb').read())
-        blogger_uuid = uuid.UUID(open('uuid', 'r').read())
+        blogger_private_key = RSA.importKey(open('id_rsa.pem', 'rb').read())
+        blogger_public_key = RSA.importKey(open('id_rsa.pub', 'rb').read())
+        blogger_uuid = str(uuid.UUID(open('uuid', 'r').read()))
     else:
         random_generator = Random.new().read
-        new_key = RSA.generate(2048, randfunc=random_generator)
-        blogger_public_key = new_key.publickey()
-        blogger_private_key = new_key
+        blogger_private_key = RSA.generate(1024, randfunc=random_generator)
+        blogger_public_key = blogger_private_key.publickey()
         blogger_uuid = str(uuid.uuid4())
-
-        f = open('id_rsa', 'w')
+        
+        f = open('id_rsa.pem', 'w')
         f.write(blogger_private_key.exportKey('PEM').decode())
         f.close()
-
+        
         f = open('id_rsa.pub', 'w')
         f.write(blogger_public_key.exportKey('PEM').decode())
         f.close()
-
+        
         f = open('uuid', 'w')
         f.write(blogger_uuid)
         f.close()
 
-    # Reads any existing information of network from file
-    if os.path.isfile('Indexes/index_file'):
-        index_file = open('Indexes/index_file', 'r')
-        file_header = index_file.readline().strip('\n')
-        data = index_file.readlines()
-
-    # Copies available information to a dictionary
-        for line in data:
-            print(line)
-            if line:
-                words = line.rstrip('\n').split(",")
-                index_dict[words[0]] = words
-        index_file.close()
+# KEYS DIRECTORY & FILE OPERATIONS
+if os.path.isdir(keys_path):
+    for filename in os.listdir(keys_path):
+        key_dict[filename.split('.')[0]] = RSA.importKey(open(keys_path + '/' + filename, 'rb').read())
     else:
-        file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,CONNECTION_FROM,CONNECTION_TO,TIMESTAMP,IS_ACTIVE'
+        # define the access rights
+        access_rights = 0o755
+        try:
+            os.mkdir(keys_path, access_rights)
+        except OSError:
+            print("Creation of the directory %s failed" % keys_path)
 
-    # TODO: Interface Implementation
+if not os.path.isdir(blog_path):
+    # define the access rights
+    access_rights = 0o755
+        try:
+            os.mkdir(blog_path, access_rights)
+    except OSError:
+        print("Creation of the directory %s failed" % blog_path)
 
-    connection = Connection(blogger_uuid, get_ip(), port, blogger_private_key, blogger_public_key)
-    connection.start()
+# INFO FILE OPERATIONS
+try:
+    index_file = open(info_file)
+    file_header = index_file.readline().strip('\n')
+    data = index_file.readlines()
+    
+    # Copies available information to a dictionary
+    for line in data:
+        print(line)
+        if line:
+            words = line.rstrip('\n').split(",")
+            info_dict[words[0]] = words
+        index_file.close()
+    except:
+        file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,CONNECTION_FROM,CONNECTION_TO,TOKEN'
 
-    # (Over)Writes the information on dictionary to a file just before closing
-    # open('Indexes/index_file', 'w').close()
-    index_file = open('Indexes/index_file', 'w')
-    index_file.write(file_header + '\n')
+# write_on_info_file(info_file, file_header, info_dict)
 
-    for value in index_dict.values():
-        i = 0
-        for word in value:
-            index_file.write(word)
-            if i != 8:
-                index_file.write(",")
-            i+=1
-        index_file.write("\n")
-    index_file.close()
+new_blogs_queue = queue.Queue()
+
+app = OpeningScreen_UI(blogger_uuid, blogger_host, blogger_port, blogger_public_key, blogger_private_key, key_dict,
+                       info_dict, new_blogs_queue)
+app.run()
+
+write_on_info_file(info_file, file_header, info_dict)
+
+# uuid_, host2connect, port2connect,  key_dict, info_dict, public_key=None, private_key=None, nickname=None, host=None, port=None
 
 
 if __name__ == "__main__":
