@@ -32,7 +32,7 @@ class Listen(threading.Thread):
 
     def run(self):
         # Socket Initialisation
-        self.socket.bind((self.host, self.port))
+        self.socket.bind(('0.0.0.0', self.port))
         self.socket.listen(25)
 
         # Accept Connections
@@ -758,7 +758,7 @@ class Homepage_UI(QtWidgets.QMainWindow):
 
         self.timer2demand_list = QtCore.QTimer()
         self.timer2demand_list.timeout.connect(self.demand_list_from_negotiator)
-        self.timer2demand_list.start(60000)
+        self.timer2demand_list.start(10000)
 
         # self.ui.tabWidget.currentChanged.connect(self.send_message)
         self.ui.login.clicked.connect(self.login)
@@ -870,21 +870,23 @@ class Homepage_UI(QtWidgets.QMainWindow):
 
     # TODO: Hata durumları
     def demand_list_from_negotiator(self):
-
+        print('Çekmeye çalıştık')
         for u in self.info_dict.keys():
             # If it's not blogger
             if self.info_dict[u][4] == 'N':
                 host2connect = self.info_dict[u][2]
                 port2connect = int(self.info_dict[u][3])
                 try:
-                    client = Client(self.uuid, host2connect, port2connect, host=self.host, port=self.port,
-                                    info_dict=self.info_dict)
+                    client = Client(self.uuid, host2connect, port2connect, nickname=self.nickname, host=self.host,
+                                    port=self.port,other_peer_uuid=u, info_dict=self.info_dict, key_dict=self.key_dict)
                     client.connect()
                     client.login()
 
                     self.button_settings()
+                    print('BBB')
 
                     client.demand_peer_list()
+                    print('AAA')
                     client.disconnect()
                 finally:
                     self.refresh_list()
@@ -1129,7 +1131,7 @@ def main():
     blogger_port = 12372
 
     # HOST
-    blogger_host = '127.0.0.1'
+    blogger_host = '192.168.1.62'
 
     # KEYS INFO
     keys_path = './KEYS'
@@ -1216,7 +1218,6 @@ def main():
         app = Homepage_UI(blogger_uuid, nickname, blogger_host, blogger_port, blogger_public_key,
                           blogger_private_key, key_dict, info_dict, new_blogs_queue)
         app.run()
-
 
     else:
         app = OpeningScreen_UI(blogger_uuid, blogger_host, blogger_port, blogger_public_key, blogger_private_key, key_dict,
