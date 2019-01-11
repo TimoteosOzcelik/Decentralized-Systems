@@ -583,11 +583,12 @@ class Client(object):
                 rest = received[3:].strip()
                 rest_list = rest.split(';')
                 if len(rest_list) == 5 :
-                    if rest_list[0] not in self.info_dict.keys():
-                        rest_list.extend(['N', 'N', ''])
-                        self.info_dict[rest_list[0]] = rest_list
-                    else:
-                        self.info_dict[rest_list[0]][0:5] = rest_list
+                    if rest_list[0] != self.uuid:
+                        if rest_list[0] not in self.info_dict.keys():
+                            rest_list.extend(['N', 'N', ''])
+                            self.info_dict[rest_list[0]] = rest_list
+                        else:
+                                self.info_dict[rest_list[0]][0:5] = rest_list
 
                 time.sleep(0.25)
                 received = self.socket.recv(2048).decode()
@@ -699,11 +700,14 @@ class OpeningScreen_UI(QtWidgets.QMainWindow):
         self.nickname = self.ui.nickname.text()
 
         if self.nickname:
+            f = open('nickname', 'w')
+            f.write(self.nickname)
+            f.close()
             self.close()
 
             homepage_screen = Homepage_UI(self.uuid, self.nickname, self.host, self.port, self.public_key,
                                           self.private_key, self.key_dict, self.info_dict, self.new_blogs, parent=self)
-            homepage_screen.run()
+            homepage_screen.show()
 
     def run(self):
         self.show()
@@ -712,6 +716,9 @@ class OpeningScreen_UI(QtWidgets.QMainWindow):
 
 class Homepage_UI(QtWidgets.QMainWindow):
     def __init__(self, my_uuid, nick, host, port, public_key, private_key, key_dict, info_dict, new_blogs, parent=None):
+        if parent is None:
+            self.qt_app = QtWidgets.QApplication([])
+
         QtWidgets.QMainWindow.__init__(self, parent)
 
         # Shape Configuration
@@ -1032,6 +1039,7 @@ class Homepage_UI(QtWidgets.QMainWindow):
 
     def run(self):
         self.show()
+        self.qt_app.exec_()
 
 
 class NewMicroBlog_UI(QtWidgets.QDialog):
@@ -1200,9 +1208,20 @@ def main():
 
     new_blogs_queue = queue.Queue()
 
-    app = OpeningScreen_UI(blogger_uuid, blogger_host, blogger_port, blogger_public_key, blogger_private_key, key_dict,
-                           info_dict, new_blogs_queue)
-    app.run()
+    if os.path.isfile('nickname'):
+        f = open('nickname', 'r')
+        nickname = f.read()
+        f.close()
+
+        app = Homepage_UI(blogger_uuid, nickname, blogger_host, blogger_port, blogger_public_key,
+                          blogger_private_key, key_dict, info_dict, new_blogs_queue)
+        app.run()
+
+
+    else:
+        app = OpeningScreen_UI(blogger_uuid, blogger_host, blogger_port, blogger_public_key, blogger_private_key, key_dict,
+                               info_dict, new_blogs_queue)
+        app.run()
 
     write_on_info_file(info_file, file_header, info_dict)
 
