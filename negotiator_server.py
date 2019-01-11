@@ -171,7 +171,7 @@ class Client(object):
 
 def main():
     negotiator_port=12654
-    negotiator_host='127.0.0.1'
+    negotiator_host='0.0.0.0' #burda 0.0.0.0 olması gerekiyor
     info_file='./INFO.txt'
     info_dict={}
 
