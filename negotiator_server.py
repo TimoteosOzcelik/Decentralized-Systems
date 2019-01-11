@@ -1,11 +1,7 @@
 import threading
 import socket
 import uuid
-import queue
-import time
 import os
-import sys
-fihrist={}
 
 
 class threadConnexion(threading.Thread):
@@ -36,7 +32,7 @@ class N_Server(threading.Thread):
             threading.Thread.__init__(self)
             self.server_uuid = server_uuid
             self.host = host
-            self.port = port
+            self.port = int(port)
             self.c_soket = c_soket
             self.info_dict = info_dict
 
@@ -46,7 +42,7 @@ class N_Server(threading.Thread):
 
         def run(self):
             while True:
-                msg = self.c_soket.recv(1024).decode()
+                msg = self.c_soket.recv(2048).decode()
                 if self.parser(msg) == 'BYE':
                     break
 
@@ -61,7 +57,8 @@ class N_Server(threading.Thread):
                 return 'BYE'
 
             if recu[0:3] == 'INF':
-                rest = recu[3:].split()
+                print(recu)
+                rest = recu[3:].strip()
                 spl = rest.split(';')
 
                 if len(spl)==5 and '' not in spl:
@@ -79,13 +76,14 @@ class N_Server(threading.Thread):
 
 
                     if check is not 'ERR' and check == ctrl_uuid:
-                        #  TOKEN AND SEND MESSAGE
+                        #  TOKEN AND SEND MESSAGE
                         token = str(uuid.uuid4())
                         snd = 'HEL ' + token
                         self.c_soket.send(snd.encode())
 
                         add_to_dict = ['L', 'N', token]
                         spl.extend(add_to_dict)
+
                         self.info_dict[ctrl_uuid] = spl
                         write_on_info_file(info_file, file_header, self.info_dict)
                         return
@@ -93,6 +91,7 @@ class N_Server(threading.Thread):
                 return
 
             elif recu[0:3] == 'LOG':
+                print(self.info_dict)
                 rest = recu[3:].strip()
                 spl = rest.split(';')
 
@@ -154,15 +153,18 @@ class Client(object):
         self.port=port
         self.info_dict=info_dict
         self.s = socket.socket()
+
     def connect(self):
         self.s.connect((self.ip,self.port))
+
     def disconnect(self):
         self.s.send('QUI'.encode())
-        if self.s.recv(1024).decode()=='BYE':
+        if self.s.recv(2048).decode()=='BYE':
             self.s.close()
+
     def check_identity(self):
         self.s.send('WHO'.encode())
-        cevap = self.s.recv(1024).decode()
+        cevap = self.s.recv(2048).decode()
         if cevap[:3] == 'MID':
             uuid_=cevap[3:].strip()
             if uuid_ :
@@ -170,8 +172,8 @@ class Client(object):
         return 'ERR'
 
 def main():
-    negotiator_port=12654
-    negotiator_host='0.0.0.0' #burda 0.0.0.0 olması gerekiyor
+    negotiator_port=12574
+    negotiator_host='0.0.0.0'
     info_file='./INFO.txt'
     info_dict={}
 
@@ -196,10 +198,12 @@ def main():
                     info_dict[words[0]] = words
             index_file.close()
         except:
-            pass
+            file_header = 'UUID,NICK,IP,PORT,IS_BLOGGER,CONNECTION_FROM,CONNECTION_TO,TOKEN'
 
-        connection = threadConnexion(negotiator_uuid, negotiator_host, negotiator_port, info_dict)
-        connection.start()
+
+    connection = threadConnexion(negotiator_uuid, negotiator_host, negotiator_port, info_dict)
+    connection.start()
+
 
 if __name__ == "__main__":
         main()
